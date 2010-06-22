@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml-stylesheet type="text/xsl" href="modx.prosilver.en.xsl"?>
+<!--For security purposes, please check: http://www.phpbb.com/mods/ for the latest version of this MOD. Although MODs are checked before being allowed in the MODs Database there is no guarantee that there are no security problems within the MOD. No support will be given for MODs not found within the MODs Database which can be found at http://www.phpbb.com/mods/-->
+<mod xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.phpbb.com/mods/xml/modx-1.2.5.xsd">
+	<header>
+		<license><![CDATA[http://opensource.org/licenses/gpl-license.php GNU General Public License v2]]></license>
+		
+		<title lang="en"><![CDATA[WYSIWYM Markdown editor]]></title>
+
+		<description lang="en"><![CDATA[This mod is as real time preview
+
+		It is not a WYSIWYG editor. Rather, it is a WYSIWYM Markdown editor (what you see Is what you mean).]]></description>
+
+		<author-group>
+			<author>
+				<realname>Gabriel</realname>
+				<username>leviatan21</username>
+				<email>info@mssti.com</email>
+				<homepage>http://www.mssti.com/phpbb3/</homepage>
+				<contributions-group>
+					<contributions status="current" from="2010-06-01" position="Developer"/>
+				</contributions-group>
+			</author>
+		</author-group>
+		
+		<mod-version>0.0.2</mod-version>
+
+		<installation>
+			<level>easy</level>
+			<time>120</time>
+			<target-version>3.0.7-PL1</target-version>
+		</installation>
+
+	</header>
+
+	<action-group>
+		
+		<open src="includes/functions_display.php">
+			<edit>
+				<find><![CDATA[}
+
+/**
+* Display reasons
+*/
+function display_reasons($reason_id = 0)]]></find>
+				<action type="before-add"><![CDATA[// MOD : WYSIWYG editor - Start
+	/**
+	* Set custom bbcodes to the live preview
+	*	We run a similar query here, 
+	* 	but just load all custom bbcodes
+	* 	not only for those bbcodes that my be displayed as buttons
+	* Alse force to load MOD files and the MOD itself
+	**/
+	$template->assign_var('S_LIVE_REVIEW', true);
+
+	$sql = 'SELECT bbcode_tag, bbcode_match, bbcode_tpl
+		FROM ' . BBCODES_TABLE . '
+		ORDER BY bbcode_tag';
+	$result = $db->sql_query($sql);
+
+	while ($row = $db->sql_fetchrow($result))
+	{
+		$template->assign_block_vars('wysiwim_custom_tags', array(
+			'WBBCODE_NAME'		=> strtolower($row['bbcode_tag']),
+			'WBBCODE_TAG'		=> preg_replace('(=(.*?)?)', '', strtolower($row['bbcode_tag'])),
+			'WBBCODE_MATCH'		=> strtolower($row['bbcode_match']),
+			'WBBCODE_REPLACE'	=> strtolower($row['bbcode_tpl']),
+		));
+	}
+	$db->sql_freeresult($result);
+
+// MOD : WYSIWYG editor - End]]></action>
+			</edit>
+		</open>
+
+		<open src="styles/prosilver/template/editor.js">
+			<edit>
+				<find><![CDATA[		insert_text('[*]');
+		document.forms[form_name].elements[text_name].focus();
+	}]]></find>
+				<action type="after-add"><![CDATA[
+/* MOD : WYSIWYG editor - Start */
+	if (typeof(WYSIWYM) != 'undefined')
+	{
+		WYSIWYM.Update();
+	}
+/* MOD : WYSIWYG editor - End */
+]]></action>
+			</edit>
+		</open>
+
+		<open src="styles/prosilver/template/posting_buttons.html">
+			<edit>
+				<find><![CDATA[<div id="format-buttons">]]></find>
+				<action type="after-add"><![CDATA[<!-- IF S_LIVE_REVIEW -->
+	<input type="button" value="{L_PREVIEW}" class="button2" onclick="dE_wysiwim('wysiwim_preview');" />&nbsp;
+<!-- ENDIF -->]]></action>
+			</edit>
+		</open>
+
+		<open src="styles/prosilver/template/posting_layout.html">
+			<edit>
+				<find><![CDATA[<!-- IF S_DISPLAY_PREVIEW --><!-- INCLUDE posting_preview.html --><!-- ENDIF -->]]></find>
+				<action type="after-add"><![CDATA[<!-- IF S_LIVE_REVIEW --><!-- INCLUDE posting_wysiwym_preview.html --><!-- ENDIF -->
+				]]></action>
+			</edit>
+		</open>
+
+		<diy-instructions lang="en"><![CDATA[IMPORTANT !
+
+#####################################################################
+Log on to Administration Control Panel
+
+#####################################################################
+A) Purge the cache :
+
+	A.1) Navigate to General Tab
+	A.2) look at Purge the cache
+	A.3) Click on "Run Now" button at right
+	A.4) in the next screen, click on "Yes"
+
+#####################################################################
+B) Refresh the templates :
+
+	B.1) Navigate to "Styles" Tab.
+	B.2) Under "Style components " click on "Templates".
+	B.3) Under "Actions" click on "Refresh".
+	B.4) in the next screen, click on "Yes"
+
+#####################################################################
+C) Enjoy it !.	
+]]></diy-instructions>
+
+	</action-group>
+</mod>

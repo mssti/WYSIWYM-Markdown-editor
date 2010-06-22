@@ -1,0 +1,21 @@
+Welcome to the MSSTI Github repository for my MODs for phpBB3.
+
+******************************************************************************
+* WYSIWYM_Markdown_editor Version 0.0.2
+******************************************************************************
+* Description: This mod is as real time preview
+* It is not a WYSIWYG editor. Rather, it is a WYSIWYM Markdown editor (what you see Is what you mean).
+******************************************************************************
+* Please keep in mind that this is still early in development, so not everything is in place or working.
+* It is not recommended that you install it on a live forum.
+* Let me know if you find anything broken, though, so I can take a look.
+* Also, good ideas and bug reports are always welcome.
+******************************************************************************
+* phpBB version: phpbb 3.0.7-PL1
+******************************************************************************
+* Requirements: JavaScript enabled
+******************************************************************************
+* License: GNU General Public License v2
+******************************************************************************
+* Before adding this MOD to your forum, you should back up all files related to this MOD.]
+******************************************************************************
