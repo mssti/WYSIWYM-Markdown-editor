@@ -3,10 +3,23 @@
 	<div class="inner"><span class="corners-top"><span></span></span>
 		<h3><span class="Show-Hide" onclick="wysiwim_resize('wysiwim_editor', -10);">[-]</span> <span class="Show-Hide" onclick="wysiwim_resize('wysiwim_editor', 10);">[+]</span>{L_PREVIEW}: {SUBJECT}</h3>
 		<div class="postbody">
-			<div id="wysiwim_editor" class="content">{L_NA}</div>
+			<div id="wysiwim_editor" name="wysiwim_editor" class="content">{L_NA}</div>
 			<script type="text/javascript">
 			// <![CDATA[
 			<!-- INCLUDE posting_wysiwym.js -->
+			/**
+			* Set display of page element
+			* s[-1,0,1] = hide,toggle display,show
+			**/
+			function toggle_wysiwim(n, s)
+			{
+				var e = document.getElementById(n);
+				if (!s)
+				{
+					s = (e.style.display == '' || e.style.display == 'block') ? -1 : 1;
+				}
+				e.style.display = (s == 1) ? 'block' : 'none';
+			}
 			// ]]>
 			</script>
 			<br />

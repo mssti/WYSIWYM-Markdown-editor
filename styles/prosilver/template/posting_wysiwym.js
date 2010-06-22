@@ -1,7 +1,7 @@
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: posting_wysiwym.js, [DEV] 0.0.5 2010/06/11 10:06:11 leviatan21 Exp $
-* @copyright: leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
+* @version: $Id: posting_wysiwym.js, [DEV] 0.0.6 2010/06/16 10:06:16 leviatan21 Exp $
+* @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
 * 
@@ -13,10 +13,9 @@
 
 /**
 * @todo :
-*	improve code ?
-*	improve url detection ?
 *	attachment improve
-*	improve phpbb_tokens
+*	code nested
+*	improve code ?
 **/
 
 /**
@@ -31,11 +30,14 @@
 *	Do not automatically parse URLs & emails
 *	custom bbcodes
 *	Smilies
-*	code nested and SyntaxHighlight
+*	SyntaxHighlight
 *	min_post_chars and max_post_chars
 *	max_post_smilies
 *	max_post_urls
 *	config and forum permission for bbcodes, smilies, img, url, flash and quote
+*	improved url detection
+*	improved phpbb_tokens
+*	Style dependance based off prosilver and subsilver2
 **/
 
 /**
@@ -44,14 +46,18 @@
 *	 _  _  _  _  _  _  _  _  _     _ __ ___   _____ _____ _____  _     ___   ___   _ __ ___  
 *	| || || || || || || || || |   | '_ ' _ \ / ___// ___/|__ __||_|   /  _| / _ \ | '_ ' _ \ 
 *	| || || || || || || || || | _ | | | | | |\___ \\___ \  | |  | | _ | |_ | |_| || | | | | |
-*	|_'_'__/ |_'_'__/ |_'_'__/ |_||_| |_| |_|/____//____/  |_|  |_||_|\___| \___/ |_| |_| |_|
+*	|_'__'__/|_'__'__/|_'__'__/|_||_| |_| |_|/____//____/  |_|  |_||_|\___| \___/ |_| |_| |_|
 *
 **/
 var WYSIWYM = new function()
 {
 	/* Set common variables - Start */
-	// variable that will carry all bbcodes
+	/* arrays that will carry all about bbcodes and smilies */
 	var bbcodes;
+	var tokens;
+	var tokens_ary;
+	var smilies;
+	var template;
 	/* The phpbb editor element */
 	var phpbb_editor = '';
 	/* The wysiwim editor element */
@@ -63,36 +69,83 @@ var WYSIWYM = new function()
 	/* Display code with highlight? */
 	var SyntaxHighlight = true;
 	/* Array that will carry all warnings messages */
-	var warn_msg = new Array();
-	/* /* Array that will carry all phpbb settings */
+	var warn_msg = [];
+	/* Array that will carry all phpbb settings */
 	var config = {
-		'Syntax_highlight'		: <!-- IF W_SYNTAX_HIGHLIGHT -->{W_SYNTAX_HIGHLIGHT}<!-- ELSE -->1<!-- ENDIF -->,
-		'display_warning'		: <!-- IF W_DISPLAY_WARN -->{W_DISPLAY_WARN}<!-- ELSE -->0<!-- ENDIF -->,
+		'template'				: 'prosilver',
+	//	'template'				: 'subsilver2',
+		'Syntax_highlight'		: {W_SYNTAX_HIGHLIGHT},
+		'display_warning'		: {W_DISPLAY_WARN},
+		'block_height'			: {W_BLOCK_HEIGHT},
+
 		/* User options - Start */
-		'viewimg'				: <!-- IF W_VIEW_IMAGES -->{W_VIEW_IMAGES}<!-- ELSE -->1<!-- ENDIF -->,
-		'viewflash'				: <!-- IF W_VIEW_FLASH -->{W_VIEW_FLASH}<!-- ELSE -->1<!-- ENDIF -->,
-		'viewsmilies'			: <!-- IF W_VIEW_SMILIES -->{W_VIEW_SMILIES}<!-- ELSE -->1<!-- ENDIF -->,
+		'viewimg'				: {W_VIEW_IMAGES},
+		'viewflash'				: {W_VIEW_FLASH},
+		'viewsmilies'			: {W_VIEW_SMILIES},
 		/* User options - End */
+
 		/* Config options - Start */
-		'bbcode_status'			: <!-- IF W_BBCODE_STATUS -->1<!-- ELSE -->0<!-- ENDIF -->,
-		'smilies_status'		: <!-- IF W_SMILIES_STATUS -->1<!-- ELSE -->0<!-- ENDIF -->,
-		'img_status'			: <!-- IF W_BBCODE_IMG -->1<!-- ELSE -->0<!-- ENDIF -->,
-		'url_status'			: <!-- IF W_BBCODE_URL -->1<!-- ELSE -->0<!-- ENDIF -->,
-		'flash_status'			: <!-- IF W_BBCODE_FLASH -->1<!-- ELSE -->0<!-- ENDIF -->,
-		'quote_status'			: <!-- IF W_BBCODE_QUOTE -->1<!-- ELSE -->0<!-- ENDIF -->,
-		'max_quote_depth'		: <!-- IF W_MAX_QUOTE_DEPTH -->{W_MAX_QUOTE_DEPTH}<!-- ELSE -->0<!-- ENDIF -->,
+		'bbcode_status'			: {W_BBCODE_STATUS},
+		'smilies_status'		: {W_SMILIES_STATUS},
+		'img_status'			: {W_BBCODE_IMG},
+		'url_status'			: {W_BBCODE_URL},
+		'flash_status'			: {W_BBCODE_FLASH},
+		'quote_status'			: {W_BBCODE_QUOTE},
+		'max_quote_depth'		: {W_MAX_QUOTE_DEPTH},
 		/* Config options - End */
+
 		/* Post options - Start */
-		'min_post_chars'		: <!-- IF W_MIN_CHARS_LIMIT -->{W_MIN_CHARS_LIMIT}<!-- ELSE -->0<!-- ENDIF -->,
-		'max_post_chars'		: <!-- IF W_MAX_CHARS_LIMIT -->{W_MAX_CHARS_LIMIT}<!-- ELSE -->0<!-- ENDIF -->,
-		'max_post_smilies'		: <!-- IF W_MAX_SMILIES_LIMIT -->{W_MAX_SMILIES_LIMIT}<!-- ELSE -->0<!-- ENDIF -->,
-		'max_post_urls'			: <!-- IF W_MAX_URL_LIMIT -->{W_MAX_URL_LIMIT}<!-- ELSE -->0<!-- ENDIF -->,
-		'max_post_font_size'	: <!-- IF W_MAX_FONT_SIZE -->{W_MAX_FONT_SIZE}<!-- ELSE -->0<!-- ENDIF -->,
-		'max_post_img_height'	: <!-- IF W_MAX_IMG_HEIGHT -->{W_MAX_IMG_HEIGHT}<!-- ELSE -->0<!-- ENDIF -->,
-		'max_post_img_width'	: <!-- IF W_MAX_IMG_WIDTH -->{W_MAX_IMG_WIDTH}<!-- ELSE -->0<!-- ENDIF -->
+		'min_post_chars'		: {W_MIN_CHARS_LIMIT},
+		'max_post_chars'		: {W_MAX_CHARS_LIMIT},
+		'max_post_smilies'		: {W_MAX_SMILIES_LIMIT},
+		'max_post_urls'			: {W_MAX_URL_LIMIT},
+		'max_post_font_size'	: {W_MAX_FONT_SIZE},
+		'max_post_img_height'	: {W_MAX_IMG_HEIGHT},
+		'max_post_img_width'	: {W_MAX_IMG_WIDTH}
 		/* Post options - End */
 	};
-	/* Set common variables - Start */
+	/* Set common variables - End */
+
+	var template = {
+		'prosilver' : {
+			'error' : {
+				'open' : '<p class="error">',
+				'close' : '</p>'
+			},
+			'quote' : {
+				'quote_username_open' : '<blockquote><div><cite>{username} {L_WROTE}:</cite>',
+				'quote_open' : '<blockquote class="uncited"><div>',
+				'quote_close' : '</div></blockquote>'
+			},
+			'code' : {
+				'code_open' : '<div class="codebox"><div>{L_CODE}: <a href="#" onclick="selectCode(this); return false;">{L_SELECT_ALL_CODE}</a></div><code name="code" class="{class}">',
+				'code_close' : '</code></div>'
+			},
+			'attach' : {
+				'inline_attachment_open' : '<div class="inline-attachment">',
+				'inline_attachment_close' : '</div>'
+			}
+		},
+		'subsilver2' : {
+			'error' : {
+				'open' : '<span class="genmed error">',
+				'close' : '</span>'
+			},
+			'quote' : {
+				'quote_username_open' : '<div class="quotetitle">{username} {L_WROTE}:</div><div class="quotecontent">',
+				'quote_open' : '<div class="quotetitle"><b>{L_QUOTE}:</b></div><div class="quotecontent">',
+				'quote_close' : '</div>'
+			},
+			'code' : {
+				'code_open' : '<div class="codetitle"><b>{L_CODE}:</b></div><div class="codecontent"><code name="code" class="{class}">',
+				'code_close' : '</code></div>'
+			},
+			'attach' : {
+				'inline_attachment_open' : '<div class="attachtitle">{L_ATTACHMENT}:</div><div class="attachcontent">',
+				'inline_attachment_close' : '</div>'
+			}
+		}
+	};
 
 	/**
 	* Some css on-the-fly
@@ -101,22 +154,34 @@ var WYSIWYM = new function()
 	{
 		if (!document.getElementById('wysiwim_style'))
 		{
-			var css_def = "";
-				css_def += "#wysiwim_preview .postbody { height: auto; font-size: 99%; }\n";
-				css_def += "#wysiwim_preview .Show-Hide { float: {S_CONTENT_FLOW_END}; margin: 0 0 0 5px; cursor: pointer; }\n";
+			var css_def  = "#wysiwim_preview .Show-Hide { float: {S_CONTENT_FLOW_END}; margin: 0 0 0 5px; cursor: pointer; }\n";
 				css_def += "#wysiwim_preview .Show-Hide:hover {	color: #ff0000; }\n";
-				css_def += "#wysiwim_editor { overflow: auto; height: 200px; padding-{S_CONTENT_FLOW_END}: 2px; }\n";
-				/** Style dependance - Start **/
+				css_def += "#wysiwim_editor { overflow: auto; height: " + config['block_height'] + "px; padding-{S_CONTENT_FLOW_END}: 2px; }\n";
+			/** Style dependance - Start **/
+			if (config['template'] == 'prosilver')
+			{
+				css_def += "#wysiwim_preview .postbody { height: auto; font-size: 99%; }\n";
 				css_def += "#wysiwim_editor .codebox { padding: 3px; background-color: #FFFFFF; font-size: 1em; border: 1px solid #d8d8d8; }\n";
 				css_def += "#wysiwim_editor .codebox div { font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #cccccc; margin-bottom: 3px; }\n";
 				css_def += "#wysiwim_editor .codebox code { color: #2E8B57; white-space: normal; display: block; font: 0.9em Monaco, 'Andale Mono','Courier New', Courier, mono; overflow: auto; max-height: 200px; padding-top: 5px; margin: 2px 0; }\n";
 				css_def += "#wysiwim_editor blockquote div { height: auto; width: 100%; }\n";
 				css_def += "#wysiwim_editor .error { font-size: 1em; }\n";
-				/** Style dependance - End **/
-			/** Style SyntaxHighlight - Start **/
-			if (config.Syntax_highlight)
+			}
+			else if (config['template'] == 'subsilver2')
 			{
-				css_def += "code.php.highlighted { color: #0000BB; }\n";
+				css_def += "#wysiwim_preview .postbody { font-size: 1.3em; line-height: 1.4em; font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif; }\n";
+				css_def += "#wysiwim_editor .codetitle { padding: 2px 4px; background-color: #A9B8C2; font-size: 0.8em; border: 1px solid #A9B8C2; }\n";
+				css_def += "#wysiwim_editor .codecontent { font-weight: normal; font-size: 0.85em; border: 1px solid #A9B8C2; padding: 5px; background-color: #FAFAFA; }\n";
+				css_def += "#wysiwim_editor .codecontent code { color: #006600; white-space: normal; display: block; font-family: Monaco, 'Courier New', monospace; }\n";
+				css_def += "#wysiwim_editor .quotetitle { color: #333333; background-color: #A9B8C2; font-size: 0.85em; font-weight: bold; padding: 4px; }\n";
+				css_def += "#wysiwim_editor .quotecontent { font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif;	background-color: #FAFAFA; color: #4B5C77; padding: 5px; font-size: 1em; border-color: #A9B8C2; border-width: 0 1px 1px 1px; border-style: solid; }\n";
+			//	css_def += "#wysiwim_editor .error { font-size: 1em; }\n";
+			}
+			/** Style dependance - End **/
+
+			/** Style SyntaxHighlight - Start **/
+			if (config['Syntax_highlight'])
+			{
 				css_def += "code.php { color: #0000BB !important; }\n";
 			}
 			/** Style SyntaxHighlight - End **/
@@ -138,8 +203,8 @@ var WYSIWYM = new function()
 	};
 
 	/**
-	* remove excessive newlines(?)
-	* http://es.kioskea.net/faq/2540-javascript-la-funcion-trim
+	* The function trim () PHP (and other languages) to remove spaces at the beginning and end of string. 
+	* There is no such function in Javascript, but the following code replace it
 	**/
 	trim = function(string)
 	{
@@ -148,30 +213,18 @@ var WYSIWYM = new function()
 
 	/**
 	* Quote regular expression characters plus an optional character
-	* 
-	* version: 1004.2314
-	* discuss at: http://phpjs.org/functions/preg_quote
-	* + original by: booeyOH
-	* + improved by: Ates Goral (http://magnetiq.com)
-	* + improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-	* + bugfixed by: Onno Marsman
+	* Code from : http://phpjs.org/functions/preg_quote:491
 	**/
-	preg_quote = function(str)
+	preg_quote = function(str, bbcode)
 	{
-		return (str + "").replace(/([\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!<>\|\:])/g, '\\$1');
-	};
-
-	/**
-	* The important thing is to remember to transform the special characters in the text of our document...
-	* code from : http://eloquentjavascript.net/chapter10.html
-	**/
-	escapeHTML = function(text)
-	{
-		var replacements = {"<" : "&lt;", ">" : "&gt;", "&" : "&amp;", "\"" : "&quot;"};
-		return text.replace(/[<>&"]/g, function(character) {
-			/* " :) */
-			return replacements[character];
-		});
+		if (bbcode)
+		{
+			return str.replace(/([\\\.\+\*\?\[\^\]\$\(\)\=\!<>\|\:])/g, '\\$1');
+		}
+		else
+		{
+			return str.replace(/([\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!<>\|\:])/g, '\\$1');
+		}
 	};
 
 	/**
@@ -179,7 +232,7 @@ var WYSIWYM = new function()
 	**/
 	uniqid = function()
 	{
-		var newDate = new Date;
+		var newDate = new Date();
 		return newDate.getTime();
 	};
 
@@ -189,7 +242,8 @@ var WYSIWYM = new function()
 	**/
 	isset = function(variable_name)
 	{
-		try {
+		try 
+		{
 			if (typeof(eval(variable_name)) != 'undefined')
 			{
 				if (eval(variable_name) !== null)
@@ -197,7 +251,14 @@ var WYSIWYM = new function()
 					return true;
 				}
 			}
-		} catch(e) { }
+		}
+		catch(e)
+		{
+			if (typeof(variable_name) != 'undefined' && variable_name !== null)
+			{
+				return true;
+			}
+		}
 		return false;
 	};
 
@@ -213,9 +274,9 @@ var WYSIWYM = new function()
 		}
 		else
 		{
-			for(var i=0; i<arr.length; i++)
+			for (var a=0; a<arr.length; a++)
 			{
-				if (arr[i] === obj)
+				if (arr[a] === obj)
 				{
 					return true;
 				}
@@ -253,38 +314,61 @@ var WYSIWYM = new function()
 
 	/**
 	* This function returns a regular expression pattern for commonly used expressions
-	* mode can be: url|url_magic|email|email_magic
+	* mode can be: url_in_line|www_url_inline|relative_url_inline|email_in_line
+	* http://answers.oreilly.com/topic/985-using-regular-expressions-in-php-and-javascript/
+	* http://www.regular-expressions.info/refflavors.html
 	**/
 	get_preg_expression = function(mode)
 	{
+		
 		var string = '';
 		switch(mode)
 		{
-			// http://www.weberdev.com/get_example-4228.html
-			case 'url_magic' :
-				string = '(([A-Za-z]+://)[A-Za-z0-9-_]+\\.[A-Za-z0-9-_%&\?\/.=\+]+(?:#[a-z][a-z0-9_]*)?)';
+			case 'scheme' :
+				return /^[a-z][a-z\d+\-.]*:\/\//i;
+			break;
+			/* for url bbcode: [url(=var1)]var2[/url] - Start */
+			case 'relative_url' :
+				return /^({URL_LOCAL})$/i;
+			break;
+			default :
+			case 'url' :
+				return /^({URL_FULL})$/i;
+			break;
+			case 'www_url' :
+				return /^({URL_WWW})$/i;
+			break;
+			/* for url bbcode: [url(=var1)]var2[/url] - End */
+
+			case 'email' : 
+				return /^({URL_EMAIL})$/i;
 			break;
 
-			case 'url':
-				string = '(([A-Za-z]+://)[A-Za-z0-9-_]+\\.[A-Za-z0-9-_%&\?\/.=\+]+(?:#[a-z][a-z0-9_]*)?)';
+			/* make_clickable - Start */
+			case 'relative_url_inline' :
+				return /(^|[\s|\n|\t|\(\.])({MAGIC_URL_LOCAL})/gim;
+			break;
+			case 'url_in_line' :
+				return /(^|[\s|\n|\t|\(\.])({MAGIC_URL_FULL})/gim;
+			break;
+			case 'www_url_inline' :
+				return /(^|[\s|\n|\t|\(])({MAGIC_URL_WWW})/gim;
+			break;
+			case 'email_in_line' : 
+				return /(^|[\s|\n|\t|\(|>])({URL_EMAIL})/gim;
+			break;
+			/* make_clickable - End */
+
+			/* Parse custom bbcodes - Start */
+			case 'token_url_full' : 
+				return "({TOKEN_URL_FULL})";
+			break;
+			case 'token_email' : 
+				return "({TOKEN_URL_EMAIL})";
 			break;
 
-			// http://ntt.cc/2008/05/10/over-10-useful-javascript-regular-expression-functions-to-improve-your-web-applications-efficiency.html
-			case 'email' :
-				string = '(([0-9a-zA-Z]+)@[0-9a-zA-Z]+[\.]{1}([0-9a-zA-Z]+[\.]?[0-9a-zA-Z]+))?';
-			break;
-
-			case 'email_magic' :
-				string = '([0-9a-zA-Z]+@[0-9a-zA-Z]+[\.]{1}[0-9a-zA-Z]+[\.]?[0-9a-zA-Z]+)';
-			break;
+			/* Parse custom bbcodes - End */
 		}
-
-		if (mode == 'url_magic' || mode == 'email_magic')
-		{
-			string = '(\\s|\\n)' + string + '(\\s|\\n)';
-		}
-
-		return string;
 	};
 
 <!-- IF .wysiwim_custom_tags -->
@@ -295,113 +379,78 @@ var WYSIWYM = new function()
 	phpbb_tokens = function()
 	{
 		var tokens = {
-			'{url}' : {
-				pattern : get_preg_expression('url'),
-				modifiers : "gi"
-			},
-			'{email}' : {
-				pattern : get_preg_expression('email'),
-				modifiers : "gi"
-			},
-			'{text}' : {
-				pattern : '((.|\\n)*?)',
-				modifiers : 'gim'
-			},
-			'{simpletext}' : {
-				pattern : '([a-zA-Z0-9-+.,_ ]+)',
-				modifiers : 'gim'
-			},
-			'{inttext}' : {
-				pattern : '([a-zA-Z0-9\-+,_. ]+)',
-				modifiers : 'gi'
-			},
-			'{identifier}' : {
-				pattern : '([a-zA-Z0-9-_]+)',
-				modifiers : 'gi'
-			},
-			'{color}' : {
-				pattern : '([a-zA-Z]+|#[0-9abcdefABCDEF]+)',
-				modifiers : 'gi'
-			},
-			'{number}' : {
-				pattern : '([0-9]+)',
-				modifiers : 'gi'
-			},
-			// Custom replacement
-			'{username}' : {
-				pattern : '(.*?)',
-				modifiers : 'gi'
-			}
+			'{url}'			: {pattern : get_preg_expression('token_url_full')},
+			'{email}'		: {pattern : get_preg_expression('token_email')},
+			'{text}'		: {pattern : '((.|\\n)*?)'},
+			'{simpletext}'	: {pattern : '([a-zA-Z0-9-+.,_ ]+)'},
+			'{inttext}'		: {pattern : '([a-zA-Z0-9\-+,_. ]+)'},
+			'{identifier}'	: {pattern : '([a-zA-Z0-9-_]+)'},
+			'{color}'		: {pattern : '([a-zA-Z]+|#[0-9abcdefABCDEF]+)'},
+			'{number}'		: {pattern : '([0-9]+)'},
+			/* Custom replacement - Start */
+			'{username}'	: {pattern : '(.*?)'}
+			/* Custom replacement - End */
 		};
-
 		return tokens;
 	};
 <!-- ENDIF -->
 
 	/**
-	* Replace phpb tokens to a valid regexp 
+	* Build regular expression for custom bbcode
+	*	Replace phpb tokens to a valid regexp 
 	**/
 	Replace_Tokens = function(bbcode, recursive)
 	{
-		var tokens		= phpbb_tokens();
-
-		var num;
+		var uniq_id = uniqid();
+		var num_token;
 		var bbcode_token;
-		var bbcode_token_new;
-		var token_open	= bbcode.bbcode_open.indexOf('{');
-		var token_close	= bbcode.bbcode_open.indexOf('}');
-		bbcode_token	= bbcode.bbcode_open.substring(token_open, token_close+1);
-		num				= bbcode_token.substring((bbcode_token.length-2), (bbcode_token.length-1));
+		var token_to_replace;
 
-		if (Number(num))
+		if (!isset(tokens))
 		{
-			bbcode_token_new	= bbcode_token.replace(num, '');
-			bbcode.bbcode_open	= bbcode.bbcode_open.replace(bbcode_token, bbcode_token_new);
-			bbcode.html_open	= bbcode.html_open.replace(bbcode_token, bbcode_token_new);
-			bbcode_token		= bbcode_token_new;
+			tokens = phpbb_tokens();
+			tokens_ary = [];
+			for (var t in tokens)
+			{
+				tokens_ary[tokens_ary.length] = t.substring(1, t.length-1);
+			}
 		}
-		else
-		{
-			num = 1;
-		}
+		var token = new RegExp("\\{(" + tokens_ary.join('|') + ')?(\\d+)?\\}', 'i');
+
+		// Catch the token to replace in this bbcode
+		var match = token.exec(bbcode.bbcode_open);
+
+		bbcode_token	 = match[0];
+		token_to_replace = '{' + match[1] + '}';
+		num_token		 = (match[2]) ? match[2] : 1;
 
 		if (recursive)
 		{
-			num = recursive;
+			num_token = recursive;
 		}
 
-		for (var token in tokens)
+		// Fool the regexp to skip $
+		if (tokens[token_to_replace].pattern.indexOf('$') != -1)
 		{
-			// Have the bbcode this token ?
-			if (bbcode_token.indexOf(token) < 0)
-			{
-				continue;
-			}
-			bbcode.bbcode_open = bbcode.bbcode_open.replace(token, tokens[token].pattern);
-			bbcode.html_open   = bbcode.html_open.replace(new RegExp(token, 'gi'), '$' + num);
-			break;
+			tokens[token_to_replace].pattern = tokens[bbcode_token].pattern.replace(/\$/gim, uniq_id);
+		}
+
+		// Replace the token with his pattern
+		bbcode.bbcode_open	= bbcode.bbcode_open.replace(bbcode_token, tokens[token_to_replace].pattern);
+		bbcode.html_open	= bbcode.html_open.replace(new RegExp(bbcode_token, 'gim'), '$' + num_token);
+
+		// Back to $
+		if (bbcode.bbcode_open.indexOf(uniq_id) != -1)
+		{
+			bbcode.bbcode_open = bbcode.bbcode_open.replace(new RegExp(uniq_id, 'gim'), '$$');
 		}
 
 		// Need to run this again ?
-		if (bbcode.bbcode_open.indexOf('{') > 0)
+		var match = token.exec(bbcode.bbcode_open);
+		if (isset(match) && match[1])
 		{
-			bbcode = Replace_Tokens(bbcode, parseFloat(num) + 1);
+			bbcode = Replace_Tokens(bbcode, parseFloat(num_token) + 1);
 		}
-
-		return bbcode;
-	};
-
-	/**
-	* build a valid regexp
-	**/
-	Build_Regexp = function(bbcode)
-	{
-		bbcode.bbcode_open = bbcode.bbcode_open.replace(/\//g, "\\/");
-		bbcode.bbcode_open = bbcode.bbcode_open.replace(/\[/g, "\\[");
-		bbcode.bbcode_open = bbcode.bbcode_open.replace(/\]/g, "\\]");
-		bbcode = Replace_Tokens(bbcode);
-		modifiers = (isset(bbcode.modifiers) ? bbcode.modifiers : 'gim');
-		bbcode.bbcode_open = new RegExp(bbcode.bbcode_open, modifiers);
 
 		return bbcode;
 	};
@@ -411,7 +460,7 @@ var WYSIWYM = new function()
 	*  1=($1) 2=($2) 3=($3) 4=($4) 5=($5) 6=($6) 7=($7) 8=($8) 9=($9) 10=($10)
 	*
 	*	var toalert = '';
-	*	for(var i=0; i<arguments.length; i++)
+	*	for (var i=0; i<arguments.length; i++)
 	*	{
 	*		toalert += "argument=("+i+") value=("+arguments[i]+")"+"\n";
 	*	}
@@ -423,7 +472,7 @@ var WYSIWYM = new function()
 			'code' : {
 				clear_open : '[code',
 				clear_close : '[/code]',
-				bbcode_open : /\[code(?:=([a-z]+))?\]((.|\n)*)?(?:\[\/code\]+)/gim,
+				bbcode_open : /\[code(?:=([a-z]+))?\]((.|\n)*\[\/code\]+)/gim,
 				bbcode_close : '',
 				html_open : bbcode_code,
 				html_close : ''
@@ -433,22 +482,31 @@ var WYSIWYM = new function()
 				clear_close : '[/quote]',
 				bbcode_open : /\[quote(?:="(.*?)")?\]+?/gim,
 				bbcode_close : /\[\/quote\]+/gim,
-				html_open : function bbcode_quote(full_tag, username)
+				html_open : function bbcode_quote()
 				{
-					if (username)
+					var username = arguments[1];
+					if (username != '')
 					{
-						return '<blockquote><div><cite>' + username + ' {L_WROTE}:</cite>';
+						return template[config['template']]['quote']['quote_username_open'].replace('{username}', username);
 					}
-						return '<blockquote class="uncited"><div>';
+						return template[config['template']]['quote']['quote_open'];
 				},
-				html_close : '</div></blockquote>'
+				html_close : template[config['template']]['quote']['quote_close']
 			},
 			'bold' : {
 				clear_open : '[b]',
 				clear_close : '[/b]',
 				bbcode_open : /\[b\]((.|\n)*?)\[\/b\]/gim,
 				bbcode_close : '',
-				html_open : '<strong>$1</strong>',
+				html_open : function bbcode_strong()
+				{
+					var text = trim(arguments[1]);
+					if (text != '')
+					{
+						return '<strong>' + text + '</strong>';
+					}
+					return '[b]' + text + '[/b]';
+				},
 				html_close : ''
 			},
 			'italic' : {
@@ -456,52 +514,108 @@ var WYSIWYM = new function()
 				clear_close : '[/i]',
 				bbcode_open : /\[i\]((.|\n)*?)\[\/i\]/gim,
 				bbcode_close : '',
-				html_open : '<em>$1</em>',
+				html_open : function bbcode_italic()
+				{
+					var text = trim(arguments[1]);
+					if (text != '')
+					{
+						return '<em>' + text + '</em>';
+					}
+					return '[i]' + text + '[/i]';
+				},
 				html_close : ''
 			},
 			'url' : {
 				clear_open : '[url]',
 				clear_close : '[/url]',
-				bbcode_open : new RegExp('\\[url\\]' + get_preg_expression('url') + '\\[/url\\]', 'gi'),
+				bbcode_open : /\[url\](.*?)\[\/url\]/gim,
 				bbcode_close : '',
 				html_open : function()
 				{
-					var url = arguments[0].replace(/\[url\]/g, "").replace(/\[\/url\]/g, ""); 
-					return bbcode_url(url, url, '', '')
+					var url = arguments[1];
+						url = trim(url);
+					if (url != '')
+					{
+						if (get_preg_expression('relative_url').test(url))
+						{
+							return bbcode_url(url, '', '', '', 'l', '-local');
+						}
+						else if (get_preg_expression('url').test(url))
+						{
+							return bbcode_url(url, '', '', '', 'm');
+						}
+						else if (get_preg_expression('www_url').test(url))
+						{
+							return bbcode_url(url, '', '', '', 'w');
+						}
+					}
+					return '[url]' + url + '[/url]';
 				},
 				html_close : ''
 			},
 			'url_description' : {
 				clear_open : '[url=',
 				clear_close : '[/url]',
-				bbcode_open : new RegExp('\\[url=' + get_preg_expression('url') + '\\](.*?)\\[/url\\]', 'gi'),
+				bbcode_open : /\[url=(.*?)\](.*?)\[\/url\]/gim,
 				bbcode_close : '',
 				html_open : function()
 				{
-					var url = arguments[0].replace(/\[url=/g, "").replace(/\](.*?)\[\/url\]/g, ""); 
-					return bbcode_url(url, arguments[3], '', '')
+					var url = arguments[1];
+						url = trim(url);
+					var text = arguments[2];
+						text = trim(text);
+					if (url != '' && text != '')
+					{
+						if (get_preg_expression('relative_url').test(url))
+						{
+							return bbcode_url(url, text, '', '', 'l', '-local');
+						}
+						else if (get_preg_expression('url').test(url))
+						{
+							return bbcode_url(url, text, '', '', 'm');
+						}
+						else if (get_preg_expression('www_url').test(url))
+						{
+							return bbcode_url(url, text, '', '', 'w');
+						}
+					}
+					return '[url=' + url + ']' + text + '[/url]';
 				},
 				html_close : ''
 			},
 			'email' : {
 				clear_open : '[email]',
 				clear_close : '[/email]',
-				bbcode_open : new RegExp('\\[email\\]' + get_preg_expression('email') + '\\[/email\\]', 'gi'),
+				bbcode_open : new RegExp('\\[email\\]' + get_preg_expression('token_email') + '\\[\\/email\\]', 'gim'),
 				bbcode_close : '',
 				html_open : function()
 				{
-					return bbcode_email(arguments[1], arguments[1], '', '');
+					var email = arguments[1];
+						email = trim(email);
+					if (email != '')
+					{
+						return bbcode_email(email, email, '', '');
+					}
+					return '[email]' + email + '[/email]';
 				},
 				html_close : ''
 			},
 			'email_description' : {
 				clear_open : '[email=',
 				clear_close : '[/email]',
-				bbcode_open : new RegExp('\\[email=' + get_preg_expression('email') + '\\](.*?)\\[/email\\]', 'gi'),
+				bbcode_open : new RegExp('\\[email=' + get_preg_expression('token_email') + '\\]((.|\n)*?)\\[\\/email\\]', 'gim'),
 				bbcode_close : '',
 				html_open : function()
 				{
-					return bbcode_email(arguments[1], arguments[4], '', '');
+					var email = arguments[1];
+						email = trim(email);
+					var text = arguments[2];
+						text = trim(text);
+					if (email != '' && text != '')
+					{
+						return bbcode_email(email, text, '', '');
+					}
+					return '[email=' + email + ']' + text + '[/email]';
 				},
 				html_close : ''
 			},
@@ -510,39 +624,48 @@ var WYSIWYM = new function()
 				clear_close : '[/img]',
 				bbcode_open : /\[img\](.*?)\[\/img\]/gim,
 				bbcode_close : '',
-				html_open : '<img src="$1" alt="{L_IMAGE}" class="resize_me" />',
-				html_close : ''
-			},
-			'image_viewimg' : {
-				clear_open : '[img]',
-				clear_close : '[/img]',
-				bbcode_open : /\[img\](.*?)\[\/img\]/gim,
-				bbcode_close : '',
-				html_open : ' <a href="$1" alt=">[ img ]" />[ img ]</a> ',
+				html_open : bbcode_img,
 				html_close : ''
 			},
 			'size' : {
 				clear_open : '[size=',
 				clear_close : '[/size]',
-				bbcode_open : /\[size=(\d+)\]/gim,
-				bbcode_close : /\[\/size\]/gim,
-				html_open : '<span style="font-size: $1%; line-height: 116%;">',
-				html_close : '</span>'
+				bbcode_open : /\[size=(\d+)\]((.|\n)*?)\[\/size\]/gim,
+				bbcode_close : '',
+				html_open : bbcode_size,
+				html_close : ''
 			},
 			'colour' : {
 				clear_open : '[color=',
 				clear_close : '[/color]',
-				bbcode_open : /\[color=(#([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])|[a-z\-]+)\]/gim,
-				bbcode_close : /\[\/color\]/gim,
-				html_open : '<span style="color: $1">',
-				html_close : '</span>'
+				bbcode_open : /\[color=(#([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])|[a-z\-]+)\]((.|\n)*?)\[\/color\]/gim,
+				bbcode_close : '',
+				html_open : function bbcode_color()
+				{
+					var color = trim(arguments[1]);
+					var text = trim(arguments[3]);
+					if (color != '' && text != '')
+					{
+						return '<span style="color: ' + color + '">' + text + '</span>';
+					}
+					return '[color=' + color + ']' + text + '[/color]';
+				},
+				html_close : ''
 			},
 			'underline' : {
 				clear_open : '[u]',
 				clear_close : '[/u]',
 				bbcode_open : /\[u\]((.|\n)*?)\[\/u\]/gim,
 				bbcode_close : '',
-				html_open : '<span style="text-decoration: underline">$1</span>',
+				html_open : function bbcode_underline()
+				{
+					var text = trim(arguments[1]);
+					if (text != '')
+					{
+						return '<span style="text-decoration: underline">' + text + '</span>';
+					}
+					return '[u]' + text + '[/u]';
+				},
 				html_close : ''
 			},
 			//	list items are managed within bbcode_list
@@ -567,23 +690,7 @@ var WYSIWYM = new function()
 				clear_close : '[/flash]',
 				bbcode_open : /\[flash=(\d+),(\d+)\](.*?)\[\/flash\]/gim,
 				bbcode_close : '',
-				html_open : '<object classid="clsid:D27CDB6E-AE6D-11CF-96B8-444553540000" codebase="http://active.macromedia.com/flash2/cabs/swflash.cab#version=5,0,0,0" width="$1" height="$2">' + 
-				'<param name="movie" value="$3" />' + 
-				'<param name="play" value="false" />' + 
-				'<param name="loop" value="false" />' + 
-				'<param name="quality" value="high" />' + 
-				'<param name="allowScriptAccess" value="never" />' + 
-				'<param name="allowNetworking" value="internal" />' + 
-				'<embed src="$3" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash" width="$1" height="$2" play="false" loop="false" quality="high" allowscriptaccess="never" allownetworking="internal"></embed>' + 
-				'</object>',
-				html_close : ''
-			},
-			'flash_viewflash' : {
-				clear_open : '[flash=',
-				clear_close : '[/flash]',
-				bbcode_open : /\[flash=(\d+),(\d+)\](.*?)\[\/flash\]/gim,
-				bbcode_close : '',
-				html_open : ' <a href="$3" alt="[ flash ]" />[ flash ]</a> ',
+				html_open : bbcode_flash,
 				html_close : ''
 			},
 <!-- IF .wysiwim_custom_tags -->
@@ -605,16 +712,20 @@ var WYSIWYM = new function()
 				bbcode_open : /\[attachment=(\d+)\](.*?)\[\/attachment\]/gim,
 				bbcode_close : '',
 				html_open : bbcode_attachment,
-			//	html_open : '<div class="inline-attachment"><dl class="file" style="height: 1em;"><strong>$2</strong></dl></div>',
 				html_close : ''
 			}
 		};
 
-		for (var i in BBcode)
+		/**
+		* Replace phpb tokens and build a valid regexp
+		**/
+		for (var b in BBcode)
 		{
-			if (isset(BBcode[i].custom_tag))
+			if (isset(BBcode[b].custom_tag))
 			{
-				BBcode[i] = Build_Regexp(BBcode[i]);
+				BBcode[b].bbcode_open = preg_quote(BBcode[b].bbcode_open, true);
+				BBcode[b] = Replace_Tokens(BBcode[b]);
+				BBcode[b].bbcode_open = new RegExp(BBcode[b].bbcode_open, 'gim');
 			}
 		}
 
@@ -631,12 +742,12 @@ var WYSIWYM = new function()
 		var smiley = {
 			/* Wrap the smiley with spaces */
 	<!-- BEGIN smiley -->
-			' {smiley.A_SMILEY_CODE} ' : {
+			'{smiley.A_SMILEY_CODE}' : {
 				image : '{smiley.SMILEY_IMG}',
 				description : '{smiley.SMILEY_DESC}'
 			}<!-- IF not smiley.S_LAST_ROW -->,<!-- ENDIF -->
 	<!-- END smiley -->
-		}
+		};
 		return smiley;
 	};
 <!-- ENDIF -->
@@ -649,52 +760,98 @@ var WYSIWYM = new function()
 	{
 		var mode = arguments[1];
 		var content = arguments[2];
-		var new_content = '';
-		var rest_content = '';
+		var code_open = '[code';
+		var code_close = '[/code]';
 
-		/* How many code we have ?*/
-		var code_count = content.split('[code').length - 1;
-		/* if we have more than 1, we need to find out the end of the current code bock */
-		if (code_count > 0)
+//		// Additionally, magic url parsing should go after parsing bbcodes, but for safety those are stripped out too...
+//		$htm_match = get_preg_expression('bbcode_htm');
+//		unset($htm_match[4], $htm_match[5]);
+//		$htm_replace = array('\1', '\1', '\2', '\1');
+
+		var out = '';
+		var code_block = '';
+		var pos;
+		var pos2;
+		var tag_length = 0;
+		var open = 1;
+		var buffer;
+
+		while (content)
 		{
-			var code_open = '[code';
-			var code_close = '[/code]';
-			var code_start = content.indexOf(code_open);
-			var code_end = content.indexOf(code_close);
-			var last_code_start = content.lastIndexOf(code_open);
-			var last_code_end = content.lastIndexOf(code_close);
+			// Determine position and tag length of next code block
+			buffer = content.split( /(^|.*?)(\[code(?:=([a-z]+))?\])((.|\n)*?)/);
+			pos = content.indexOf(code_open);
+			tag_length = (typeof(buffer[2]) !== 'undefined') ? buffer[2].length : 0;
 
-			new_content = content.substring(0, code_end);
+			// Determine position of ending code tag
+			pos2 = content.indexOf(code_close);
 
-			/* Neested code - Start */
-			var num_matches = new_content.match( /\[code/gim );
-			var next = (num_matches !== null) ? num_matches.length : 0;
-			if (next)
+			// Which is the next block, ending code or code block
+			if (pos > -1 && pos < pos2)
 			{
-				tmp_content = content.substring(new_content.length);
-				while (next + 1 > 0)
+				// Open new block
+				if (!open)
 				{
-					new_content = new_content + tmp_content.substring(0, tmp_content.indexOf(code_close) + code_close.length);
-					tmp_content = tmp_content.substring(tmp_content.indexOf(code_close) + code_close.length);
-				//	alert("new_content\n"+new_content+"\n tmp_content\n"+tmp_content);
-					next--;
+					out += content.substring(0, pos);
+					content = content.substring(pos);
+					mode = (typeof(buffer[3]) !== 'undefined') ? buffer[3] : '';
+					code_block = '';
 				}
-				rest_content = content.substring(new_content.length) + code_close;
+				else
+				{
+					// Already opened block, just append to the current block
+					code_block += content.substring(0, pos) + ((typeof(buffer[2]) !== 'undefined') ? buffer[2] : '');
+					content = content.substring(pos);
+				}
+
+				content = content.substring(tag_length);
+				open++;
 			}
-			/* Neested code - End */
-			/* No eested code - Start */
 			else
 			{
-				rest_content = content.substring(code_end + code_close.length, content.length) + code_close;
-			}
+				// Close the block
+				if (open == 1)
+				{
+					code_block += content.substring(0, pos2);
+//					code_block = preg_replace($htm_match, $htm_replace, code_block);
 
-			rest_content = rest_content.replace(/\[code(?:=([a-z]+))?\]((.|\n)*)?(?:\[\/code\]+)/igm, bbcode_code);
-			content = new_content;
-			/* No eested code - - End */
+					// Parse this code block
+					out += bbcode_parse_code(mode, code_block);
+					code_block = '';
+					open--;
+				}
+				else if (open)
+				{
+					// Close one open tag... add to the current code block
+					code_block += content.substring(0, pos2 + 7);
+					open--;
+				}
+				else
+				{
+					// end code without opening code... will be always outside code block
+					out += content.substring(0, pos2 + 7);
+				}
+
+				content = content.substring(pos2 + 7);
+			}
 		}
 
+		// if now code_block has contents we need to parse the remaining code while removing the last closing tag to match up.
+		if (code_block)
+		{
+			code_block = code_block.substring(0, code_block.length-7);
+//			code_block = preg_replace($htm_match, $htm_replace, code_block);
+
+			out += bbcode_parse_code(mode, code_block);
+		}
+
+		return out;
+	};
+
+	bbcode_parse_code = function(mode, content)
+	{
 		/* SyntaxHighlighter */
-		mode = (mode ? (config.Syntax_highlight ? mode : '') : '');
+		mode = (mode) ? (config['Syntax_highlight'] ? mode : '') : '';
 
 		/*	'['	to	'&#91;'	and	']'	to	'&#93;'		*/
 		if (content.indexOf("[") != -1 || content.indexOf("]") != -1)
@@ -714,12 +871,12 @@ var WYSIWYM = new function()
 		else
 		{
 			/* Double spaces */
-			content = content.replace(/ /g, "&nbsp;");
+		//	content = content.replace(/ /g, "&nbsp;");
 			/* Tabs to 4 spaces */
 			content = content.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;");
 		}
 
-		return '<div class="codebox"><div>{L_CODE}: <a href="#" onclick="selectCode(this); return false;">{L_SELECT_ALL_CODE}</a></div><code name="code" class="' + mode + '">' + content + '</code></div>' + rest_content;
+		return template[config['template']]['code']['code_open'].replace('{class}', mode) + content + template[config['template']]['code']['code_close'];
 	};
 
 	/**
@@ -803,6 +960,152 @@ var WYSIWYM = new function()
 	};
 
 	/**
+	* Parse img tag
+	**/
+	bbcode_img = function()
+	{
+		var url = arguments[1];
+			url = trim(url);
+
+		if (url != '' && (get_preg_expression('url').test(url) || get_preg_expression('www_url').test(url)))
+		{
+			url = url.replace(/\s/g, '%20');
+
+			// Try to cope with a common user error... not specifying a protocol but only a subdomain
+			// if there is no scheme, then add http schema
+			if (!get_preg_expression('scheme').test(url))
+			{
+				url = 'http://' + url;
+			}
+			/**
+			* Get image dimensions in JS can be slow 
+			* this will work for cached images
+			**/
+			var message;
+			var img_error = false;
+			var newObjImage = new Image();
+				newObjImage.src = url;
+			if ((newObjImage.height && config['max_post_img_height']) || (newObjImage.width && config['max_post_img_width']))
+			{
+				if (newObjImage.height > config['max_post_img_height'])
+				{
+					message = '{LA_MAX_IMG_HEIGHT_EXCEEDED}'.replace('%1$d', config['max_post_img_height']);
+					if (!in_array(message, warn_msg))
+					{
+						warn_msg[warn_msg.length] = message;
+					}
+					img_error = true;
+				}
+				if (newObjImage.width > config['max_post_img_width'])
+				{
+					message = '{LA_MAX_IMG_WIDTH_EXCEEDED}'.replace('%1$d', config['max_post_img_width']);
+					if (!in_array(message, warn_msg))
+					{
+						warn_msg[warn_msg.length] = message;
+					}
+					img_error = true;
+				}
+			}
+			if (!img_error)
+			{
+				if (config['viewimg'])
+				{
+					return '<img src="' + url + '" alt="{L_IMAGE}" class="resize_me" />';
+				}
+				else
+				{
+					return ' <a href="' + url + '" alt=">[ img ]" />[ img ]</a> ';
+				}
+			}
+		}
+		return '[img]' + url + '[/img]';
+	};
+
+	/**
+	* Parse size tag
+	**/
+	bbcode_size = function()
+	{
+		var size = parseInt(arguments[1], 10);
+		var text = trim(arguments[2]);
+
+		// Do not allow size=0 or empty text
+		if (size > 0 && text != '')
+		{
+			if (config['max_post_font_size'] &&  size > config['max_post_font_size'])
+			{
+				message = '{LA_MAX_FONT_SIZE_EXCEEDED}'.replace('%1$d', config['max_post_font_size']);
+				if (!in_array(message, warn_msg))
+				{
+					warn_msg[warn_msg.length] = message;
+				}
+			}
+			else
+			{
+				return '<span style="font-size: ' + size + '%; line-height: 116%;">' + text + '</span>';
+			}
+		}
+		return '[size=' + size + ']' + text + '[/size]';
+	};
+
+	/**
+	* Parse flash tag
+	**/
+	bbcode_flash = function()
+	{
+		var url = arguments[3];
+			url = trim(url);
+		var width = parseInt(arguments[1], 10);
+		var height = parseInt(arguments[2], 10);
+
+		var message;
+		var flash_error = false;
+		// Do not allow 0-sizes generally being entered
+		if (url != '' && width > 0 && height > 0)
+		{
+			if (config['max_post_img_height'] && height > config['max_post_img_height'])
+			{
+				message = '{LA_MAX_FLASH_HEIGHT_EXCEEDED}'.replace('%1$d', config['max_post_img_height']);
+				if (!in_array(message, warn_msg))
+				{
+					warn_msg[warn_msg.length] = message;
+				}
+				flash_error = true;
+			}
+			if (config['max_post_img_width'] && width > config['max_post_img_width'])
+			{
+				message = '{LA_MAX_FLASH_WIDTH_EXCEEDED}'.replace('%1$d', config['max_post_img_width']);
+				if (!in_array(message, warn_msg))
+				{
+					warn_msg[warn_msg.length] = message;
+				}
+				flash_error = true;
+			}
+			if (!flash_error)
+			{
+				if (config['viewflash'])
+				{
+					url = url.replace(/\s/g, '%20');
+					return '<object classid="clsid:D27CDB6E-AE6D-11CF-96B8-444553540000" codebase="http://active.macromedia.com/flash2/cabs/swflash.cab#version=5,0,0,0" width="' + width + '" height="' + height + '">' + 
+						'<param name="movie" value="' + url + '" />' + 
+						'<param name="play" value="false" />' + 
+						'<param name="loop" value="false" />' + 
+						'<param name="quality" value="high" />' + 
+						'<param name="allowScriptAccess" value="never" />' + 
+						'<param name="allowNetworking" value="internal" />' + 
+						'<embed src="' + url + '" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash" width="' + width + '" height="' + height + '" play="false" loop="false" quality="high" allowscriptaccess="never" allownetworking="internal"></embed>' + 
+						'</object>';
+				}
+				else
+				{
+					return ' <a href="' + url + '" alt=">[ flash ]" />[ flash ]</a> ';
+				}
+			}
+		}
+		return '[flash=' + width + ',' + height + ']' + url + '[/flash]';
+	};
+
+	/**
 	* Parse attachment bbcode
 	**/
 	bbcode_attachment = function(full_tag, attach_num, attach_name)
@@ -828,22 +1131,37 @@ var WYSIWYM = new function()
 	* Cuts down displayed size of link if over 50 chars, turns absolute links
 	* into relative versions when the server/script path matches the link
 	**/
-	bbcode_url = function(url, short_url, before, after)
+	validate_url = function(url, short_url, before)
 	{
 		var tag			= 'w';
-		var css_class	= 'postlink';
+		var css_class	= '';
 		var board_url	= '{BOARD_URL}';
 
 		// if there is no scheme, then add http schema
-		if (url.indexOf('http://') < 0)
+		if (!get_preg_expression('scheme').test(url))
 		{
 			url = 'http://' + url;
-		//	short_url = 'http://' + short_url;
 		}
 
 		// built a short description
 		short_url = (short_url) ? short_url : url;
 		short_url = (short_url.length > 55) ? short_url.substring(0, 39) + ' ... ' + short_url.substring(url.length, short_url.length-10) : short_url;
+
+		// Is this a link to somewhere inside this board?
+		if (url.indexOf(board_url) > -1)
+		{
+			short_url = url.replace(new RegExp(board_url, 'gi'), '');
+		}
+		return bbcode_url(url, short_url, before, tag, css_class);
+	};
+
+	bbcode_url = function(url, short_url, before, tag, css_class)
+	{
+		var board_url	= '{BOARD_URL}';
+
+		tag = (tag) ? tag : 'w';
+		css_class = (css_class) ? css_class : '';
+		short_url = (short_url) ? short_url : url;
 
 		// Is this a link to somewhere inside this board?
 		if (url.indexOf(board_url) > -1)
@@ -854,88 +1172,161 @@ var WYSIWYM = new function()
 				url = url.replace(/(&|\?)sid=[0-9a-f]{32,}&/gi, '$1');
 				url = url.replace(/(&|\?)sid=[0-9a-f]{32,}$/gi, '');
 			}
-			short_url = url.replace(new RegExp(board_url, 'gi'), '');
-			css_class = 'postlink-local';
+			css_class = '-local';
 			tag	  = 'l';
 		}
-		return before + '<!-- ' + tag + ' --><a href="' + url + '" class="' + css_class + '">' + short_url + '</a><!-- ' + tag + ' -->' + after;
+
+		url = url.replace(/\s/g, '%20');
+		short_url = deEntify(short_url);
+
+		return before + '<!-- ' + tag + ' --><a href="' + url + '" class="postlink' + css_class + '">' + short_url + '</a><!-- ' + tag + ' -->';
 	};
 
 	/**
 	* parse email
 	**/
-	bbcode_email = function(email, short_email, before, after)
+	bbcode_email = function(email, short_email, before)
 	{
 		short_email = (short_email) ? short_email : email;
 
-		return before + '<!-- e --><a href="mailto:' + email + '">' + short_email + '</a><!-- e -->' + after;
+		short_email = deEntify(short_email);
+
+		return before + '<!-- e --><a href="mailto:' + email + '">' + short_email + '</a><!-- e -->';
 	};
 
 	/**
 	* make_clickable function
-	*
 	* Replace magic urls of form http://xxx.xxx., www.xxx. and xxx@xxx.xxx.
 	**/
 	make_clickable = function(str)
 	{
-		// links
-		str = str.replace(new RegExp(get_preg_expression('url_magic'), 'gi'), function()
-			{
-				//	http://www.mssti.com/phpbb3/viewtopic.php?f=95&p=10994#p10994
-				var full_url	= arguments[0];
-				var before		= (arguments[1] ? arguments[1] : '');
-				var short_url	= arguments[2];		//	http://www.mssti.com/phpbb3/viewtopic.php?f=95&p=10994#p10994
-				var scheme		= arguments[3];		//	http://
-				var after		= (arguments[4] ? arguments[4] : '');
-				// remove excessive spaces and newlines(?)
-				url = trim(full_url);
-				// if there is no scheme, then add http schema
-				url = (!scheme) ? 'http://' + url : url;
-				// parse it
-				return bbcode_url(url, short_url, before, after);
-			}
-		);
+		/* links - Start */
+		// Is this a link to somewhere inside this board?
+		var relative_url_inline = get_preg_expression('relative_url_inline');
+		if (relative_url_inline.test(str))
+		{
+			str = str.replace(relative_url_inline, function()
+				{
+					var before		= (arguments[1] ? arguments[1] : '');
+					var full_url	=  arguments[2] + '/' + arguments[3];
+					// parse it
+					return validate_url(full_url, full_url, before);
+				}
+			);
+		}
+		// matches a xxxx://aaaaa.bbb.cccc. ...
+		var url_in_line = get_preg_expression('url_in_line');
+		if (url_in_line.test(str))
+		{
+			str = str.replace(url_in_line, function()
+				{
+					var before		= (arguments[1] ? arguments[1] : '');
+					var full_url	=  arguments[2];
+					// parse it
+					return validate_url(full_url, full_url, before);
+				}
+			);
+		}
+		// matches a "www.xxxx.yyyy[/zzzz]" kinda lazy URL thing
+		var www_url_inline = get_preg_expression('www_url_inline');
+		if (www_url_inline.test(str))
+		{
+			str = str.replace(www_url_inline, function()
+				{
+					var before		= (arguments[1] ? arguments[1] : '');
+					var full_url	=  arguments[2];
+					// parse it
+					return validate_url(full_url, full_url, before);
+				}
+			);
+		}
+		/* links - End */
+
 		// emails
-		str = str.replace(new RegExp(get_preg_expression('email_magic'), 'gi'), function()
-			{
-				var full_email	= arguments[0];
-				var before		= (arguments[1] ? arguments[1] : '');
-				var after		= (arguments[3] ? arguments[3] : '');
-				// remove excessive spaces and newlines(?)
-				email = trim(full_email);
-				// built a short description
-				short_url = email;
-				// parse it
-				return bbcode_email(email, short_url, before, after);
-			}
-		);
+		var email_in_line = get_preg_expression('email_in_line');
+		if (email_in_line.test(str))
+		{
+			str = str.replace(email_in_line, function()
+				{
+					var before		= (arguments[1] ? arguments[1] : '');
+					var full_email	=  arguments[2];
+					// parse it
+					return bbcode_email(full_email, full_email, before);
+				}
+			);
+		}
+
 		return str;
 	};
+
+	<!-- IF S_SMILIES_ALLOWED and .smiley -->
+	/**
+	* Parse Smilies
+	**/
+	parse_smilies = function(content)
+	{
+		var match = [];
+		var replace = [];
+
+		// The smilies array is global 
+		for (var smiley in smilies)
+		{
+			smilie = new RegExp("(^|\\b|\\s|\\n|\\.)(" + preg_quote(smiley) + ")(^|\\b|\\s|\\n|\\.)", 'gim');
+			var buffer = content.split(smilie);
+			if (buffer[1])
+			{
+				match[match.length] = new RegExp(preg_quote(smiley), 'g');
+				replace[replace.length] = '<!-- s(' + smiley + ') --><img src="' + smilies[smiley].image + '" alt="' + smiley + '" title="' + smilies[smiley].description + '" /><!-- s(' + smiley + ') -->'
+			}
+		}
+
+		if (match.length)
+		{
+			// Check number of smilies
+			if (config['max_post_smilies'] && match.length > config['max_post_smilies'])
+			{
+				warn_msg[warn_msg.length] = '{LA_TOO_MANY_SMILIES}'.replace('%d', config['max_post_smilies']);
+				return content;
+			}
+
+			for (var m=0; m<match.length; m++)
+			{
+				content = content.replace(match[m], replace[m]);
+			}
+		}
+		return content;
+	};
+	<!-- ENDIF -->
 
 	/**
 	* Main function
 	*	Most of the magic happens here
 	**/
-	bbcode_to_html_Parse = function(str, mode)
+	bbcode_to_html_parse = function(str, mode)
 	{
+	//	var box = document.getElementById('wysiwim_editor');
+	//	var new_height = parseInt(box.style.height, 10);
+
 		// We surround the post text with spaces, because a smilie can be there or a link for parse_magic_url
 		str = ' ' + str + ' ';
 
 		// Do some general 'cleanup' first before processing message,
-		str = str.replace(/(script|about|applet|activex|chrome):/gi, "\$1&#058;");
+		str = str.replace(/&(\w+?);/gim, '&amp;$1;');
+		str = str.replace(/(script|about|applet|activex|chrome):/gim, "\$1&#058;");
 
 		// Store message length... 
-		var message_length = (mode == 'post') ? deEntify(str).length : deEntify(str.replace(/\[\/?[a-z\*\+\-]+(=[\S]+)?\]/gim, ' ')).length;
+		var message_length = (mode == 'post') ? deEntify(trim(str)).length : deEntify(trim(str.replace(/\[\/?[a-z\*\+\-]+(=[\S]+)?\]/gim, ' '))).length;
 
 		// Maximum message length check. 0 disables this check completely.
-		if (config.max_post_chars > 0 && message_length > config.max_post_chars)
+		if (config['max_post_chars'] > 0 && message_length > config['max_post_chars'])
 		{
-			warn_msg[warn_msg.length] = '{LA_TOO_MANY_CHARS_POST}'.replace('%1$d', message_length).replace('%2$d', config.max_post_chars);
+			warn_msg[warn_msg.length] = '{LA_TOO_MANY_CHARS_POST}'.replace('%1$d', message_length).replace('%2$d', config['max_post_chars']);
 		}
+
 		// Minimum message length check for post only
-		if (!message_length || message_length < config.min_post_chars)
+		if (!message_length || message_length < config['min_post_chars'])
 		{
-			warn_msg[warn_msg.length] = '{LA_TOO_FEW_CHARS_LIMIT}'.replace('%1$d', message_length).replace('%2$d', config.min_post_chars);
+			warn_msg[warn_msg.length] = '{LA_TOO_FEW_CHARS_LIMIT}'.replace('%1$d', message_length).replace('%2$d', config['min_post_chars']);
 		}
 
 		/*	'<'	to	'&lt;'	and	'>'	to	'&gt;'	*/
@@ -944,41 +1335,33 @@ var WYSIWYM = new function()
 			str = str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 		}
 
-		/* Do not automatically parse URLs - Start */
-		if (!is_checked('disable_magic_url'))
-		{
-			str = make_clickable(str);
-		}
-		/* Do not automatically parse URLs - End */
-
-		var have_quote = (str.indexOf('[quote') > -1 ? true : false);
-		var have_list = (str.indexOf('[list') > -1 ? true : false);
+		var have_quote	= (str.indexOf('[quote') > -1 ? true : false);
+		var have_list	= (str.indexOf('[list') > -1 ? true : false);
+		var have_smilie	= false;
 
 		/** Have the post a possible bbcode? 
 		*	and the user want to display it 
 		*	and the forum allow use BBCode  - Start **/
-		if (str.indexOf('[') > -1 && !is_checked('disable_bbcode') && config.bbcode_status)
+		if (str.indexOf('[') > -1 && !is_checked('disable_bbcode') && config['bbcode_status'])
 		{
 			var bbcode_start;
 			var bbcode_end;
-			// Do not run twice if it has already been executed earlier.
-			bbcodes = (!isset(bbcodes)) ? bbcode_init() : bbcodes;
 
-			for (var i in bbcodes)
+			// The bbcodes array is global 
+			for (var bb in bbcodes)
 			{
 				// Have this bbcode (open or close tag)?
-				bbcode_start = (isset(bbcodes[i].bbcode_open)) ? str.indexOf(bbcodes[i].clear_open) > -1 : false;
-				bbcode_end = (isset(bbcodes[i].bbcode_close)) ? str.indexOf(bbcodes[i].clear_close) > -1 : (bbcode_start) ? true : false;
+				bbcode_start = (isset(bbcodes[bb].bbcode_open)) ? str.indexOf(bbcodes[bb].clear_open) > -1 : false;
+				bbcode_end = (isset(bbcodes[bb].bbcode_close)) ? str.indexOf(bbcodes[bb].clear_close) > -1 : (bbcode_start) ? true : false;
 				if (bbcode_start && bbcode_end)
 				{
 					/* the forum allow use this BBCode? - Start */
-					if ((i == 'quote' && !config.quote_status) ||
-						(i == 'url' && !config.url_status) || (i == 'url_description' && !config.url_status) || 
-						(i == 'email' && !config.url_status) || (i == 'email_description' && !config.url_status) || 
-						(i == 'image' && !config.img_status) || (i == 'image_viewimg' && !config.img_status) || 
-						(i == 'flash' && !config.flash_status) || (i == 'flash_viewflash' && !config.flash_status))
+					if ((bb == 'quote' && !config['quote_status']) ||
+						(bb == 'url' && !config['url_status']) || (bb == 'url_description' && !config['url_status']) || 
+						(bb == 'email' && !config['url_status']) || (bb == 'email_description' && !config['url_status']) || 
+						(bb == 'image' && !config['img_status']) || (bb == 'flash' && !config['flash_status']))
 					{
-						message = '{LA_UNAUTHORISED_BBCODE}'.replace('%s', bbcodes[i].clear_open.replace("=", ']'));
+						message = '{LA_UNAUTHORISED_BBCODE}'.replace('%s', bbcodes[bb].clear_open.replace("=", ']'));
 						if (!in_array(message, warn_msg))
 						{
 							warn_msg[warn_msg.length] = message;
@@ -987,20 +1370,13 @@ var WYSIWYM = new function()
 					}
 					/* the forum allow use this BBCode? - Start */
 
-					/*	images optionget and flash optionget - Start */
-					if ((i == 'image' && !config.viewimg) || (i == 'flash' && !config.viewflash))
-					{
-						continue;
-					}
-					/*	images optionget and flash optionget - End */
-
 					// Replace the bbcode open with his corresponding open html
-					str = str.replace(bbcodes[i].bbcode_open, bbcodes[i].html_open);
+					str = str.replace(bbcodes[bb].bbcode_open, bbcodes[bb].html_open);
 
 					// Replace the bbcode close with his corresponding close html
-					if (bbcodes[i].bbcode_close != '')
+					if (bbcodes[bb].bbcode_close != '')
 					{
-						str = str.replace(bbcodes[i].bbcode_close, bbcodes[i].html_close);
+						str = str.replace(bbcodes[bb].bbcode_close, bbcodes[bb].html_close);
 					}
 				}
 			}
@@ -1017,44 +1393,33 @@ var WYSIWYM = new function()
 		}
 		/** Have the post a possible bbcode ? - End **/
 
+		<!-- IF S_SMILIES_ALLOWED and .smiley -->
 		/* Parse posting smilies?
 		*	and the user want to display it 
 		*	and the forum allow use BBCode  - Start **/
-		if (config.viewsmilies && !is_checked('disable_smilies') && config.smilies_status)
+		if (config['viewsmilies'] && !is_checked('disable_smilies') && config['smilies_status'])
 		{
-			<!-- IF S_SMILIES_ALLOWED and .smiley -->
-			var smilies = phpbb_smilies();
-			for (var smiley in smilies)
-			{
-				smilie = new RegExp(preg_quote(smiley), 'g');
-				// Have this smiley ?
-				if (str.indexOf(smiley) > -1)
-				{
-					str = str.replace(smilie, ' <!-- s(' + smiley + ') --><img src="' + smilies[smiley].image + '" alt="' + smiley + '" title="' + smilies[smiley].description + '" /><!-- s(' + smiley + ') --> ');
-				}
-			}
-			// Check number of smilies
-			if (config.max_post_smilies)
-			{
-				var num_matches = str.match(/<\!-- s\((.*?)\) -->.*?<\!-- s\(\1\) -->/gim);
-				if (num_matches !== null && num_matches.length > config.max_post_smilies)
-				{
-					warn_msg[warn_msg.length] = '{LA_TOO_MANY_SMILIES}'.replace('%d', config.max_post_smilies);
-				}
-			}
-			<!-- ENDIF -->
+			str = parse_smilies(str);
 		}
 		/* Parse posting smilies - End */
+		<!-- ENDIF -->
 
 		/* Check for max_quote_depth - Start */
-		if (have_quote && config.max_quote_depth > 0)
+		if (have_quote && config['max_quote_depth'] > 0)
 		{
-			bbcode_quote_depth(str, config.max_quote_depth);
+			bbcode_quote_depth(str, config['max_quote_depth']);
 		}
 		/* Check for max_quote_depth - End */
 
+		/* Do not automatically parse URLs - Start */
+		if (!is_checked('disable_magic_url'))
+		{
+			str = make_clickable(str);
+		}
+		/* Do not automatically parse URLs - End */
+
 		/* Check number of links - Start */
-		if (config.max_post_urls)
+		if (config['max_post_urls'])
 		{
 			/**
 			*	l=local
@@ -1063,9 +1428,9 @@ var WYSIWYM = new function()
 			*	e=emails
 			**/
 			var num_matches = str.match(/<\!-- ([lmwe]) -->.*?<\!-- \1 -->/gim);
-			if (num_matches !== null && num_matches.length > config.max_post_urls)
+			if (num_matches !== null && num_matches.length > config['max_post_urls'])
 			{
-				warn_msg[warn_msg.length] = '{LA_TOO_MANY_URLS}'.replace('%d', config.max_post_urls);
+				warn_msg[warn_msg.length] = '{LA_TOO_MANY_URLS}'.replace('%d', config['max_post_urls']);
 			}
 		}
 		/* Check number of links - End */
@@ -1076,15 +1441,15 @@ var WYSIWYM = new function()
 		/* Display errors if we have - Start */
 		if (warn_msg.length)
 		{
-			if (config.display_warning)
+			if (config['display_warning'])
 			{
 				alert(warn_msg.join("\n"));
 			}
 			else
 			{
-				str = '<p class="error">' + warn_msg.join("<br />") + '</p>'; // + str;
+				str = template[config['template']]['error']['open'] + warn_msg.join("<br />") + template[config['template']]['error']['close'];
 			}
-			warn_msg = new Array();
+			warn_msg = [];
 		}
 		/* Display errors if we have - Start */
 
@@ -1105,10 +1470,10 @@ var WYSIWYM = new function()
 		{
 			var quote_start = 0;
 			var quote_end = 0;
-			for (var i = 0, str_length = str.length; i < str_length; i++)
+			for (var q = 0, str_length = str.length; q < str_length; q++)
 			{
-				quote_start = str.indexOf(quote_html_open, i);
-				quote_end = str.indexOf(quote_html_close, i);
+				quote_start = str.indexOf(quote_html_open, q);
+				quote_end = str.indexOf(quote_html_close, q);
 				if (quote_start > -1 && quote_end > quote_start)
 				{
 					str_quote = str.substring(quote_start, quote_end + quote_html_close.length);
@@ -1120,11 +1485,11 @@ var WYSIWYM = new function()
 						warn_msg[warn_msg.length] = '{LA_QUOTE_DEPTH_EXCEEDED}'.replace('%1$d', max_quote_depth);
 						break;
 					}
-					i = quote_start;
+					q = quote_start;
 				}
 				else
 				{
-					i += quote_html_close.length;
+					q += quote_html_close.length;
 				}
 			}
 		}
@@ -1139,11 +1504,11 @@ var WYSIWYM = new function()
 		// Run this only if the preview is visible ;)
 		if (document.getElementById(wysiwim_preview).style.display != 'none')
 		{
-			var the_text = bbcode_to_html_Parse(phpbb_editor.value, 'post');
+			var the_text = bbcode_to_html_parse(phpbb_editor.value, 'post');
 
 			wysiwim_editor.innerHTML = the_text;
 
-			if (config.Syntax_highlight)
+			if (config['Syntax_highlight'])
 			{
 				SyntaxHighlighter.highlightDocument(false);
 			}
@@ -1157,11 +1522,18 @@ var WYSIWYM = new function()
 	**/
 	Start = function()
 	{
-		phpbb_editor = document.getElementById('message');
+		phpbb_editor = document.forms[form_name].elements[text_name];
 		phpbb_editor.onkeyup = function() { Update(); return false; };
 		wysiwim_editor = document.getElementById('wysiwim_editor');
+		// Some css on-the-fly
 		wysiwim_addStyle();
-		dE(wysiwim_preview);
+		// Fill the bbcodes array
+		bbcodes = bbcode_init();
+		// Fill the smilies array
+		smilies = phpbb_smilies();
+		// hide the preview
+		toggle_wysiwim(wysiwim_preview);
+
 	};
 
 	this.Start = Start;
@@ -1174,7 +1546,7 @@ var WYSIWYM = new function()
 **/
 function dE_wysiwim(ID)
 {
-	dE(ID);
+	toggle_wysiwim(ID);
 	if (document.getElementById(ID).style.display != 'none')
 	{
 		WYSIWYM.Update();
@@ -1185,7 +1557,7 @@ function dE_wysiwim(ID)
 function wysiwim_resize(id, pix)
 {
 	var box = document.getElementById(id);
-	var new_height = (parseInt(box.style.height) ? parseInt(box.style.height) : 200) + pix;
+	var new_height = (parseInt(box.style.height, 10) ? parseInt(box.style.height, 10) : 200) + pix;
 
 	if (new_height > 0)
 	{
@@ -1202,10 +1574,10 @@ if (!Array.prototype.indexOf)
 		var len = this.length;
 		for (var i = 0; i < len; i++)
 		{
-			if (this[i] == val) return i;
+			if (this[i] == val) { return i; }
 		}
 		return -1;
-	}
+	};
 }
 
 /** Install the safety net - START **/
@@ -1246,7 +1618,7 @@ SyntaxHighlighter.language = {
 };
 SyntaxHighlighter.uniqid = function()
 {
-	var newDate = new Date;
+	var newDate = new Date();
 	return newDate.getTime();
 };
 SyntaxHighlighter.strToXHTML = function(str)
@@ -1262,7 +1634,7 @@ SyntaxHighlighter.strToXHTML = function(str)
 			}
 		);
 	}
-	return { "str" : str, "addLen" : addLen }
+	return { "str" : str, "addLen" : addLen };
 };
 SyntaxHighlighter.copyObject = function(ob)
 {
@@ -1442,16 +1814,16 @@ SyntaxHighlighter.highlight = function(codeEl, showLineNumbers)
 				{
 					if (line.charAt(charIndex + i) != lang.comment.single.start.charAt(i))
 					{
-						beginSingleCommentIndex = -1
+						beginSingleCommentIndex = -1;
 						break;
 					}
 				}
 				if (beginSingleCommentIndex != -1)
 				{
-					var substrOb = SyntaxHighlighter.strToXHTML(line.substr(beginSingleCommentIndex));
-					line = line.substr(0, beginSingleCommentIndex) + comment_open + substrOb.str + comment_close;
+					var substrOb2 = SyntaxHighlighter.strToXHTML(line.substr(beginSingleCommentIndex));
+					line = line.substr(0, beginSingleCommentIndex) + comment_open + substrOb2.str + comment_close;
 					charIndex = line.length - 1;
-					prop[beginSingleCommentIndex] = comment_len + substrOb.str.length;
+					prop[beginSingleCommentIndex] = comment_len + substrOb2.str.length;
 					continue forCharLoop;
 				}
 			}
@@ -1485,7 +1857,7 @@ SyntaxHighlighter.highlight = function(codeEl, showLineNumbers)
 				var isKeyword = true;
 				for (var key in prop)
 				{
-					if (keywordIndex >= parseInt(key) && keywordIndex < (parseInt(key) + parseInt(prop[key])))
+					if (keywordIndex >= parseInt(key, 10) && keywordIndex < (parseInt(key, 10) + parseInt(prop[key], 10)))
 					{
 						isKeyword = false;
 						break;
@@ -1498,9 +1870,9 @@ SyntaxHighlighter.highlight = function(codeEl, showLineNumbers)
 					var tmpOb = new Object();
 					for (var key in prop)
 					{
-						if (parseInt(key) > keywordIndex)
+						if (parseInt(key, 10) > keywordIndex)
 						{
-							var newIndex = parseInt(key) + keyword_len;
+							var newIndex = parseInt(key, 10) + keyword_len;
 							tmpOb[newIndex] = prop[key];
 						}
 						else
