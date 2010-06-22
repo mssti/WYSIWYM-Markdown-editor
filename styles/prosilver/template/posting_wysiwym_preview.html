@@ -1,6 +1,7 @@
+<!-- IF S_BBCODE_ALLOWED -->
 <div class="panel <!-- IF S_PRIVMSGS -->pm<!-- ELSE -->bg2<!-- ENDIF -->" id="wysiwim_preview">
 	<div class="inner"><span class="corners-top"><span></span></span>
-		<h3>{L_PREVIEW}: {SUBJECT}</h3>
+		<h3><span class="Show-Hide" onclick="wysiwim_resize('wysiwim_editor', -10);">[-]</span> <span class="Show-Hide" onclick="wysiwim_resize('wysiwim_editor', 10);">[+]</span>{L_PREVIEW}: {SUBJECT}</h3>
 		<div class="postbody">
 			<div id="wysiwim_editor" class="content">{L_NA}</div>
 			<script type="text/javascript">
@@ -13,3 +14,4 @@
 	<span class="corners-bottom"><span></span></span></div>
 </div>
 <div class="clear"></div>
+<!-- ENDIF -->
