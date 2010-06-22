@@ -1,26 +1,24 @@
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: posting_wysiwym.js, [DEV] 0.0.2 2010/06/02 10:06:02 leviatan21 Exp $
+* @version: $Id: posting_wysiwym.js, [DEV] 0.0.3 2010/06/02 10:06:02 leviatan21 Exp $
 * @copyright: leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License 
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
 * 
 **/
 
-/**
-* Set display of page element
-* ID = element id 
-**/
-function dE_wysiwim(ID)
-{
-	dE(ID);
-	if (document.getElementById(ID).style.display != 'none')
-	{
-		WYSIWYM.Update();
-	}
-	return true;
-}
+/** Some css on-the-fly - Start **/
+document.write("\n\r" + '<style type="text/css" media="all">'+ "\r" + '<!--' + "\r");
+document.write("\r" + '#wysiwim_preview .postbody { height: auto; font-size: 85%; }');
+document.write("\r" + '#wysiwim_editor { overflow: auto; height: 200px; padding-{S_CONTENT_FLOW_END}: 2px; }');
+/** Style dependance - Start **/
+document.write("\r" + '#wysiwim_editor .codebox { padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; }');
+document.write("\r" + '#wysiwim_editor .codebox div { float: none; font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #cccccc; }');
+document.write("\r" + '#wysiwim_editor .codebox code { color: #2E8B57; white-space: normal; display: block; }');
 
+/** Style dependance - End **/
+document.write( "\r" + '-->' + "\r" + '</style>' + "\n\r");
+/** Some css on-the-fly - End **/
 /**
 * This is not a WYSIWYG editor. Rather, it is a WYSIWYM Markdown editor (what you see Is what you mean).
 **/
@@ -37,10 +35,10 @@ var WYSIWYM = new function()
 	Start = function()
 	{
 		phpbb_editor = document.getElementById('message');
-		phpbb_editor.onkeyup = function() { Update(); return false; }
+		phpbb_editor.onkeyup = function() { Update(); return false; };
 		wysiwim_editor = document.getElementById('wysiwim_editor');
 		dE(wysiwim_preview);
-	},
+	};
 
 	/**
 	* Get core bbcodes and custom bbcodes ( if available )
@@ -139,16 +137,16 @@ var WYSIWYM = new function()
 			'underline' : {
 				clear_open : '[u]',
 				clear_close : '[/u]',
-				bbcode_open : /\[u\](.*?)\[\/u\]/gim,
-				bbcode_close : '',
-				html_open : '<span style="text-decoration: underline">$1</span>',
-				html_close : ''
+				bbcode_open : /\[u\]/gim,
+				bbcode_close : /\[\/u\]/gim,
+				html_open : '<span style="text-decoration: underline">',
+				html_close : '</span>'
 			},
 			//	list items are managed within bbcode_list
 			'unordered_list' : {
 				clear_open : '[list]',
 				clear_close : '[/list]',
-				bbcode_open : /\[list\](.*?)\[\/list\]/gim,
+				bbcode_open : /\[list\]((.|\n)*?)\[\/list\]/gim,
 				bbcode_close : '',
 				html_open : bbcode_list,
 				html_close : ''
@@ -156,7 +154,7 @@ var WYSIWYM = new function()
 			'ordered_list' : {
 				clear_open : '[list=',
 				clear_close : '[/list]',
-				bbcode_open : /\[list=(.*?)\](.*?)\[\/list\]/gim,
+				bbcode_open : /\[list=(.*?)\]((.|\n)*?)\[\/list\]/gim,
 				bbcode_close : '',
 				html_open : bbcode_list,
 				html_close : ''
@@ -225,7 +223,7 @@ var WYSIWYM = new function()
 			'attachment' : {
 				clear_open : '[attachment=',
 				clear_close : '[/attachment]',
-				bbcode_open : /\[attachment=(\d+)](.*?)\[\/attachment\]/gim,
+				bbcode_open : /\[attachment=(\d+)\](.*?)\[\/attachment\]/gim,
 				bbcode_close : '',
 			//	html_open : bbcode_attachment
 				html_open : '<div class="inline-attachment"><dl class="file" style="height: 1em;"><strong>$2</strong></dl></div>',
@@ -233,28 +231,7 @@ var WYSIWYM = new function()
 			}
 		};
 		return BBcode;
-	},
-
-	/**
-	* Parse code text from code tag
-	**/
-	bbcode_code = function(full_tag, content )
-	{
-		/* Double spaces */
-		content = content.replace(/  /g, "&nbsp;&nbsp;");
-		/* Tabs to 4 spaces */
-		content = content.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;");
-		/*	'['	to 	'&#91;'	and ']'	to 	'&#93;'		*/
-		content = content.replace(/\[/g, '&#091;').replace(/\]/g, '&#093;');
-		/*	'.'	to 	'&#46;'	and	':'	to 	'&#058;'	*/
-		content = content.replace(/\./g, '&#046;').replace(/\:/g, '&#058;');
-		/*	'<'	to 	'&lt;'	and	'>'	to 	'&gt;'		*/
-		content = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-		return '<div style="padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; ">' + 
-				'<div style="float: none; font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #CCCCCC;">{L_CODE}: <a href="#" onclick="selectCode(this); return false;">{L_SELECT_ALL_CODE}</a></div>' + 				
-				'<code style="color: #2E8B57; white-space: normal; display: block;">' + content + '</code></div>';
-	},
+	};
 
 <!-- IF .wysiwim_custom_tags -->
 	/**
@@ -304,8 +281,46 @@ var WYSIWYM = new function()
 		};
 
 		return tokens;
-	},
+	};
 <!-- ENDIF -->
+
+<!-- IF S_SMILIES_ALLOWED and .smiley -->
+	/**
+	* Set a pair of tokens and replacement for custom bbcodes
+	* We use lowecase because the template engine
+	**/
+	phpbb_smilies = function()
+	{
+		var smiley = {
+			/* Wrap the smiley with spaces */
+	<!-- BEGIN smiley -->
+			' {smiley.A_SMILEY_CODE} ' : {
+				image : '{smiley.SMILEY_IMG}',
+				description : '{smiley.SMILEY_DESC}'
+			}<!-- IF not smiley.S_LAST_ROW -->,<!-- ENDIF -->
+	<!-- END smiley -->
+		}
+		return smiley;
+	};
+<!-- ENDIF -->
+	/**
+	* Parse code text from code tag
+	**/
+	bbcode_code = function(full_tag, content )
+	{
+		/* Double spaces */
+		content = content.replace(/  /g, "&nbsp;&nbsp;");
+		/* Tabs to 4 spaces */
+		content = content.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;");
+		/*	'['	to 	'&#91;'	and ']'	to 	'&#93;'		*/
+		content = content.replace(/\[/g, '&#091;').replace(/\]/g, '&#093;');
+		/*	'.'	to 	'&#46;'	and	':'	to 	'&#058;'	*/
+		content = content.replace(/\./g, '&#046;').replace(/\:/g, '&#058;');
+		/*	'<'	to 	'&lt;'	and	'>'	to 	'&gt;'		*/
+		content = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+		return '<div class="codebox">' + '<div>{L_CODE}: <a href="#" onclick="selectCode(this); return false;">{L_SELECT_ALL_CODE}</a></div><code>' + content + '</code></div>';
+	};
 
 	/**
 	* Parse list bbcode
@@ -382,7 +397,7 @@ var WYSIWYM = new function()
 		{
 			return '<ul style="list-style-type: ' + type + '">' + content + '</ul>';
 		}
-	},
+	};
 
 	/**
 	* Parse attachment bbcode
@@ -398,64 +413,7 @@ var WYSIWYM = new function()
 			html += '</div>';
 
 		return html;
-	},
-
-	/**
-	* 
-	**/
-	bbcode_to_html_Parse = function(str)
-	{
-		/** Have the post a possible bbcode ? **/
-		if (str.indexOf('[') < -1)
-		{
-			return str;
-		}
-
-		var bbcodes = BBcode_set();
-		for (var i in bbcodes)
-		{
-			// Have this bbcode (open or close tag)?
-			if (str.indexOf(bbcodes[i].clear_open) > -1 || (str.indexOf(bbcodes[i].clear_close) > -1))
-			{
-				// Replace the bbcode open with his corresponding open html
-				str = str.replace(bbcodes[i].bbcode_open, bbcodes[i].html_open);
-
-				// Replace the bbcode close with his corresponding close html
-				if (bbcodes[i].bbcode_close != '')
-				{
-					str = str.replace(bbcodes[i].bbcode_close, bbcodes[i].html_close);
-				}
-			}
-
-		<!-- IF .wysiwim_custom_tags -->
-			if (isset(bbcodes[i].custom_tag))
-			{
-				// Have this bbcode (full tag) ?
-				if (str.indexOf(bbcodes[i].clear_open) > -1)
-				{
-					bbcodes[i] = Build_Regexp(bbcodes[i]);
-
-					// Replace the bbcode open with his corresponding open html
-					str = str.replace(bbcodes[i].bbcode_open, bbcodes[i].html_open);
-				}
-			}
-		<!-- ENDIF -->
-		}
-
-		/* Back to []:. */
-		//	'&#091;'	to	'['	and	'&#093;'	to 	']'
-		str = str.replace(/&amp;#091;/gi, '[').replace(/&amp;#093;/gi, ']');
-		//	'&#046;'	to 	'.' and '&#058;'	to	':'
-		str = str.replace(/&amp;#046;/gi, '.').replace(/&amp;#058;/gi, ':');
-
-		/* Lists have too much "carriage return"	*/
-		str = str.replace(/<\/(ol|ul)>\n/g, "</$1>");
-
-		/* convert CRLF to <br> */
-		str = str.replace(/\n/g, "<br />");
-
-		return str + "<br />";
-	},
+	};
 
 	/**
 	* Determine if a variable exist
@@ -465,11 +423,15 @@ var WYSIWYM = new function()
 	{
 		try {
 			if (typeof(eval(variable_name)) != 'undefined')
-			if (eval(variable_name) != null)
-				return true;
-			} catch(e) { }
+			{
+				if (eval(variable_name) !== null)
+				{
+					return true;
+				}
+			}
+		} catch(e) { }
 		return false;
-	},
+	};
 
 	/**
 	* build a valid regexp
@@ -484,7 +446,7 @@ var WYSIWYM = new function()
 		bbcode.bbcode_open = new RegExp(bbcode.bbcode_open, 'gim');
 
 		return bbcode;
-	},
+	};
 
 	/**
 	* Replace phpb tokens to a valid regexp 
@@ -537,7 +499,7 @@ var WYSIWYM = new function()
 		}
 
 		return bbcode;
-	},
+	};
 
 	/**
 	* Pure innerHTML is slightly faster in IE 
@@ -558,7 +520,7 @@ var WYSIWYM = new function()
 		/* Since we just removed the old element from the DOM, return a reference
 		to the new element, which can be used to restore variable references. */
 		return newEl;
-	},
+	};
 
 	/**
 	* Update the preview
@@ -574,10 +536,98 @@ var WYSIWYM = new function()
 			wysiwim_editor.innerHTML = the_text;
 		//	replaceHtml(wysiwim_editor, the_text);
 		}
-	}
+	};
+
+	/**
+	* Main function
+	*	Most of the magic happens here
+	**/
+	bbcode_to_html_Parse = function(str)
+	{
+		/** Have the post a possible bbcode ? **/
+		if (str.indexOf('[') < -1)
+		{
+			return str;
+		}
+
+		var bbcodes = BBcode_set();
+		for (var i in bbcodes)
+		{
+			// Have this bbcode (open or close tag)?
+			if (str.indexOf(bbcodes[i].clear_open) > -1 || (str.indexOf(bbcodes[i].clear_close) > -1))
+			{
+				// Replace the bbcode open with his corresponding open html
+				str = str.replace(bbcodes[i].bbcode_open, bbcodes[i].html_open);
+
+				// Replace the bbcode close with his corresponding close html
+				if (bbcodes[i].bbcode_close != '')
+				{
+					str = str.replace(bbcodes[i].bbcode_close, bbcodes[i].html_close);
+				}
+			}
+
+		<!-- IF .wysiwim_custom_tags -->
+			if (isset(bbcodes[i].custom_tag))
+			{
+				// Have this bbcode (full tag) ?
+				if (str.indexOf(bbcodes[i].clear_open) > -1)
+				{
+					bbcodes[i] = Build_Regexp(bbcodes[i]);
+
+					// Replace the bbcode open with his corresponding open html
+					str = str.replace(bbcodes[i].bbcode_open, bbcodes[i].html_open);
+				}
+			}
+		<!-- ENDIF -->
+		}
+
+		<!-- IF S_SMILIES_ALLOWED and .smiley -->
+		var smilies = phpbb_smilies();
+		for (var smiley in smilies)
+		{
+			// Have this smiley ?
+			if (str.indexOf(smiley) > -1)
+			{
+				str = str.replace(smiley, ' <img src="' + smilies[smiley].image + '" alt="' + smiley + '" title="' + smilies[smiley].description + '" /> ');
+			}			
+		}
+		<!-- ENDIF -->
+
+
+		/* Back to []:. */
+		//	'&#091;'	to	'['	and	'&#093;'	to 	']'
+		str = str.replace(/&amp;#091;/gi, '[').replace(/&amp;#093;/gi, ']');
+		//	'&#046;'	to 	'.' and '&#058;'	to	':'
+		str = str.replace(/&amp;#046;/gi, '.').replace(/&amp;#058;/gi, ':');
+
+		/* Lists have too much "carriage return"	*/
+		str = str.replace(/<(ol|ul)([^>]+)>\n+/gim, "<$1>");
+		str = str.replace(/<\/(ol|ul)>\n+/gim, "</$1>");
+		str = str.replace(/<li>\n+/gim, "<li>");
+		str = str.replace(/\n+<\/li>/gim, "</li>");
+
+		/* convert CRLF to <br> */
+		str = str.replace(/\n/g, "<br />");
+
+		return str + "<br />";
+	};
 
 	this.Start = Start;
 	this.Update = Update;
+};
+
+/**
+* Set display of page element
+* ID = element id 
+**/
+function dE_wysiwim(ID)
+{
+	dE(ID);
+	if (document.getElementById(ID).style.display != 'none')
+	{
+		WYSIWYM.Update();
+	}
+	return true;
 }
 
 /** Install the safety net - START **/

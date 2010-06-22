@@ -23,7 +23,7 @@
 			</author>
 		</author-group>
 		
-		<mod-version>0.0.2</mod-version>
+		<mod-version>0.0.3</mod-version>
 
 		<installation>
 			<level>easy</level>
@@ -35,6 +35,10 @@
 
 	<action-group>
 		
+		<copy>
+			<file from="root/styles/prosilver/template/*.*" to="styles/prosilver/template/*.*" />
+		</copy>
+
 		<open src="includes/functions_display.php">
 			<edit>
 				<find><![CDATA[}
