@@ -23,7 +23,7 @@
 			</author>
 		</author-group>
 		
-		<mod-version>0.0.3</mod-version>
+		<mod-version>0.0.4</mod-version>
 
 		<installation>
 			<level>easy</level>
@@ -55,7 +55,13 @@ function display_reasons($reason_id = 0)]]></find>
 	* 	not only for those bbcodes that my be displayed as buttons
 	* Alse force to load MOD files and the MOD itself
 	**/
-	$template->assign_var('S_LIVE_REVIEW', true);
+	$template->assign_vars(array(
+		'S_LIVE_REVIEW'		=> true,
+		'W_MAX_QUOTE_DEEP'	=> (int) $config['max_quote_depth'],
+		'W_VIEW_IMAGES'		=> (int) $user->optionget('viewimg'),
+		'W_VIEW_FLASH'		=> (int) $user->optionget('viewflash'),
+		'W_VIEW_SMILIES'	=> (int) $user->optionget('viewsmilies'),
+	));
 
 	$sql = 'SELECT bbcode_tag, bbcode_match, bbcode_tpl
 		FROM ' . BBCODES_TABLE . '
@@ -72,25 +78,70 @@ function display_reasons($reason_id = 0)]]></find>
 		));
 	}
 	$db->sql_freeresult($result);
-
 // MOD : WYSIWYG editor - End]]></action>
 			</edit>
 		</open>
 
 		<open src="styles/prosilver/template/editor.js">
 			<edit>
-				<find><![CDATA[		insert_text('[*]');
+				<find><![CDATA[			// Add tags around selection
+			document.selection.createRange().text = bbopen + theSelection + bbclose;
+			document.forms[form_name].elements[text_name].focus();
+			theSelection = '';]]></find>
+				<action type="after-add"><![CDATA[
+/** MOD : WYSIWYM editor - Start **/
+			wysiwym_editor();
+/** MOD : WYSIWYM editor - End **/
+]]></action>
+			</edit>
+
+			<edit>
+				<find><![CDATA[		mozWrap(document.forms[form_name].elements[text_name], bbopen, bbclose);
 		document.forms[form_name].elements[text_name].focus();
+		theSelection = '';]]></find>
+				<action type="after-add"><![CDATA[
+/** MOD : WYSIWYM editor - Start **/
+		wysiwym_editor();
+/** MOD : WYSIWYM editor - End **/
+]]></action>
+			</edit>
+
+			<edit>
+				<find><![CDATA[	if (!popup) 
+	{
+		textarea.focus();
 	}]]></find>
 				<action type="after-add"><![CDATA[
-/* MOD : WYSIWYG editor - Start */
+/** MOD : WYSIWYM editor - Start **/
+			wysiwym_editor();
+/** MOD : WYSIWYM editor - End **/
+]]></action>
+			</edit>
+
+			<edit>
+				<find><![CDATA[		// we ignore the end value for IE, this is already dirty enough and we don't need it
+		caretPos.start = txtarea.sel_start;
+		caretPos.end = txtarea.sel_start;			
+	}
+
+	return caretPos;
+}]]></find>
+				<action type="after-add"><![CDATA[
+/**
+* MOD : WYSIWYM editor - Start
+* Chech if the WYSIWYM Markdown editor is available and eventually update it
+**/
+function wysiwym_editor()
+{ 
 	if (typeof(WYSIWYM) != 'undefined')
 	{
 		WYSIWYM.Update();
 	}
-/* MOD : WYSIWYG editor - End */
+}
+/** MOD : WYSIWYM editor - End **/
 ]]></action>
 			</edit>
+
 		</open>
 
 		<open src="styles/prosilver/template/posting_buttons.html">
