@@ -1,0 +1,41 @@
+
+<table class="tablebg" width="100%" cellspacing="1" id="wysiwym_preview">
+<tr> 
+	<th><span class="Show-Hide" onclick="wysiwym_resize('wysiwym_editor', -10);">[-]</span> <span class="Show-Hide" onclick="wysiwym_resize('wysiwym_editor', 10);">[+]</span>{L_PREVIEW}: {SUBJECT}</th>
+</tr>
+<tr> 
+	<td class="row1">
+		<table width="100%" border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td>
+				<div class="postbody">
+					<div id="wysiwym_editor" name="wysiwym_editor" class="xxcontent">{L_NA}</div>
+					<script type="text/javascript">
+					// <![CDATA[
+					<!-- INCLUDE posting_wysiwym.js -->
+					/**
+					* Set display of page element
+					* s[-1,0,1] = hide,toggle display,show
+					**/
+					function toggle_wysiwym(n, s)
+					{
+						var e = document.getElementById(n);
+						if (!s)
+						{
+							s = (e.style.display == '') ? -1 : 1;
+						}
+						e.style.display = (s == 1) ? '' : 'none';
+					}
+					// ]]>
+					</script>
+				</div>
+			</td>
+		</tr>
+		</table>
+	</td>
+</tr>
+<tr>
+	<td class="spacer"><img src="images/spacer.gif" alt="" width="1" height="1" /></td>
+</tr>
+</table>
+<br clear="all" />

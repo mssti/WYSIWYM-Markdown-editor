@@ -60,10 +60,10 @@ var WYSIWYM = new function()
 	var template;
 	/* The phpbb editor element */
 	var phpbb_editor = '';
-	/* The wysiwim editor element */
-	var wysiwim_editor = '';
-	/* The wysiwim editor object */
-	var wysiwim_preview = 'wysiwim_preview';
+	/* The wysiwym editor element */
+	var wysiwym_editor = '';
+	/* The wysiwym editor object */
+	var wysiwym_preview = 'wysiwym_preview';
 	/* Display warnings as an alert? */
 	var display_warning = false;
 	/* Display code with highlight? */
@@ -72,8 +72,8 @@ var WYSIWYM = new function()
 	var warn_msg = [];
 	/* Array that will carry all phpbb settings */
 	var config = {
-		'template'				: 'prosilver',
-	//	'template'				: 'subsilver2',
+	//	'template'				: 'prosilver',
+		'template'				: 'subsilver2',
 		'Syntax_highlight'		: {W_SYNTAX_HIGHLIGHT},
 		'display_warning'		: {W_DISPLAY_WARN},
 		'block_height'			: {W_BLOCK_HEIGHT},
@@ -150,32 +150,32 @@ var WYSIWYM = new function()
 	/**
 	* Some css on-the-fly
 	**/
-	wysiwim_addStyle = function()
+	wysiwym_addStyle = function()
 	{
-		if (!document.getElementById('wysiwim_style'))
+		if (!document.getElementById('wysiwym_style'))
 		{
-			var css_def  = "#wysiwim_preview .Show-Hide { float: {S_CONTENT_FLOW_END}; margin: 0 0 0 5px; cursor: pointer; }\n";
-				css_def += "#wysiwim_preview .Show-Hide:hover {	color: #ff0000; }\n";
-				css_def += "#wysiwim_editor { overflow: auto; height: " + config['block_height'] + "px; padding-{S_CONTENT_FLOW_END}: 2px; }\n";
+			var css_def  = "#wysiwym_preview .Show-Hide { float: {S_CONTENT_FLOW_END}; margin: 0 0 0 5px; cursor: pointer; }\n";
+				css_def += "#wysiwym_preview .Show-Hide:hover {	color: #ff0000; }\n";
+				css_def += "#wysiwym_editor { overflow: auto; height: " + config['block_height'] + "px; padding-{S_CONTENT_FLOW_END}: 2px; }\n";
 			/** Style dependance - Start **/
 			if (config['template'] == 'prosilver')
 			{
-				css_def += "#wysiwim_preview .postbody { height: auto; font-size: 99%; }\n";
-				css_def += "#wysiwim_editor .codebox { padding: 3px; background-color: #FFFFFF; font-size: 1em; border: 1px solid #d8d8d8; }\n";
-				css_def += "#wysiwim_editor .codebox div { font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #cccccc; margin-bottom: 3px; }\n";
-				css_def += "#wysiwim_editor .codebox code { color: #2E8B57; white-space: normal; display: block; font: 0.9em Monaco, 'Andale Mono','Courier New', Courier, mono; overflow: auto; max-height: 200px; padding-top: 5px; margin: 2px 0; }\n";
-				css_def += "#wysiwim_editor blockquote div { height: auto; width: 100%; }\n";
-				css_def += "#wysiwim_editor .error { font-size: 1em; }\n";
+				css_def += "#wysiwym_preview .postbody { height: auto; font-size: 99%; }\n";
+				css_def += "#wysiwym_editor .codebox { padding: 3px; background-color: #FFFFFF; font-size: 1em; border: 1px solid #d8d8d8; }\n";
+				css_def += "#wysiwym_editor .codebox div { font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #cccccc; margin-bottom: 3px; }\n";
+				css_def += "#wysiwym_editor .codebox code { color: #2E8B57; white-space: normal; display: block; font: 0.9em Monaco, 'Andale Mono','Courier New', Courier, mono; overflow: auto; max-height: 200px; padding-top: 5px; margin: 2px 0; }\n";
+				css_def += "#wysiwym_editor blockquote div { height: auto; width: 100%; }\n";
+				css_def += "#wysiwym_editor .error { font-size: 1em; }\n";
 			}
 			else if (config['template'] == 'subsilver2')
 			{
-				css_def += "#wysiwim_preview .postbody { font-size: 1.3em; line-height: 1.4em; font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif; }\n";
-				css_def += "#wysiwim_editor .codetitle { padding: 2px 4px; background-color: #A9B8C2; font-size: 0.8em; border: 1px solid #A9B8C2; }\n";
-				css_def += "#wysiwim_editor .codecontent { font-weight: normal; font-size: 0.85em; border: 1px solid #A9B8C2; padding: 5px; background-color: #FAFAFA; }\n";
-				css_def += "#wysiwim_editor .codecontent code { color: #006600; white-space: normal; display: block; font-family: Monaco, 'Courier New', monospace; }\n";
-				css_def += "#wysiwim_editor .quotetitle { color: #333333; background-color: #A9B8C2; font-size: 0.85em; font-weight: bold; padding: 4px; }\n";
-				css_def += "#wysiwim_editor .quotecontent { font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif;	background-color: #FAFAFA; color: #4B5C77; padding: 5px; font-size: 1em; border-color: #A9B8C2; border-width: 0 1px 1px 1px; border-style: solid; }\n";
-			//	css_def += "#wysiwim_editor .error { font-size: 1em; }\n";
+				css_def += "#wysiwym_preview .postbody { font-size: 1.3em; line-height: 1.4em; font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif; }\n";
+				css_def += "#wysiwym_editor .codetitle { padding: 2px 4px; background-color: #A9B8C2; font-size: 0.8em; border: 1px solid #A9B8C2; }\n";
+				css_def += "#wysiwym_editor .codecontent { font-weight: normal; font-size: 0.85em; border: 1px solid #A9B8C2; padding: 5px; background-color: #FAFAFA; }\n";
+				css_def += "#wysiwym_editor .codecontent code { color: #006600; white-space: normal; display: block; font-family: Monaco, 'Courier New', monospace; }\n";
+				css_def += "#wysiwym_editor .quotetitle { color: #333333; background-color: #A9B8C2; font-size: 0.85em; font-weight: bold; padding: 4px; }\n";
+				css_def += "#wysiwym_editor .quotecontent { font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif;	background-color: #FAFAFA; color: #4B5C77; padding: 5px; font-size: 1em; border-color: #A9B8C2; border-width: 0 1px 1px 1px; border-style: solid; }\n";
+			//	css_def += "#wysiwym_editor .error { font-size: 1em; }\n";
 			}
 			/** Style dependance - End **/
 
@@ -188,7 +188,7 @@ var WYSIWYM = new function()
 
 			var css_obj = document.createElement('style');
 				css_obj.setAttribute("type", "text/css");
-				css_obj.setAttribute("id", "wysiwim_style");
+				css_obj.setAttribute("id", "wysiwym_style");
 			if (css_obj.styleSheet)
 			{// IE
 				css_obj.styleSheet.cssText = css_def;
@@ -371,7 +371,7 @@ var WYSIWYM = new function()
 		}
 	};
 
-<!-- IF .wysiwim_custom_tags -->
+<!-- IF .wysiwym_custom_tags -->
 	/**
 	* Set a pair of tokens and replacement for custom bbcodes
 	* We use lowecase because the template engine
@@ -693,18 +693,18 @@ var WYSIWYM = new function()
 				html_open : bbcode_flash,
 				html_close : ''
 			},
-<!-- IF .wysiwim_custom_tags -->
-	<!-- BEGIN wysiwim_custom_tags -->
-			'{wysiwim_custom_tags.WBBCODE_NAME}' : {
-				clear_open : '[{wysiwim_custom_tags.WBBCODE_TAG}',
-				clear_close : '[/{wysiwim_custom_tags.WBBCODE_TAG}]',
-				bbcode_open : '{wysiwim_custom_tags.WBBCODE_MATCH}',
+<!-- IF .wysiwym_custom_tags -->
+	<!-- BEGIN wysiwym_custom_tags -->
+			'{wysiwym_custom_tags.WBBCODE_NAME}' : {
+				clear_open : '[{wysiwym_custom_tags.WBBCODE_TAG}',
+				clear_close : '[/{wysiwym_custom_tags.WBBCODE_TAG}]',
+				bbcode_open : '{wysiwym_custom_tags.WBBCODE_MATCH}',
 				bbcode_close : '',
-				html_open : '{wysiwim_custom_tags.WBBCODE_REPLACE}',
+				html_open : '{wysiwym_custom_tags.WBBCODE_REPLACE}',
 				html_close : '',
 				custom_tag : true
 			},
-	<!-- END wysiwim_custom_tags -->
+	<!-- END wysiwym_custom_tags -->
 <!-- ENDIF -->
 			'attachment' : {
 				clear_open : '[attachment=',
@@ -1304,7 +1304,7 @@ var WYSIWYM = new function()
 	**/
 	bbcode_to_html_parse = function(str, mode)
 	{
-	//	var box = document.getElementById('wysiwim_editor');
+	//	var box = document.getElementById('wysiwym_editor');
 	//	var new_height = parseInt(box.style.height, 10);
 
 		// We surround the post text with spaces, because a smilie can be there or a link for parse_magic_url
@@ -1502,18 +1502,18 @@ var WYSIWYM = new function()
 	{
 	//	e = e || window.event; // for IE
 		// Run this only if the preview is visible ;)
-		if (document.getElementById(wysiwim_preview).style.display != 'none')
+		if (document.getElementById(wysiwym_preview).style.display != 'none')
 		{
 			var the_text = bbcode_to_html_parse(phpbb_editor.value, 'post');
 
-			wysiwim_editor.innerHTML = the_text;
+			wysiwym_editor.innerHTML = the_text;
 
 			if (config['Syntax_highlight'])
 			{
 				SyntaxHighlighter.highlightDocument(false);
 			}
 			/* I bet that someone wat to display tabs inside the code bbcode */
-		//	wysiwim_editor.innerHTML = wysiwim_editor.innerHTML.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, "\t");
+		//	wysiwym_editor.innerHTML = wysiwym_editor.innerHTML.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, "\t");
 		}
 	};
 
@@ -1524,15 +1524,15 @@ var WYSIWYM = new function()
 	{
 		phpbb_editor = document.forms[form_name].elements[text_name];
 		phpbb_editor.onkeyup = function() { Update(); return false; };
-		wysiwim_editor = document.getElementById('wysiwim_editor');
+		wysiwym_editor = document.getElementById('wysiwym_editor');
 		// Some css on-the-fly
-		wysiwim_addStyle();
+		wysiwym_addStyle();
 		// Fill the bbcodes array
 		bbcodes = bbcode_init();
 		// Fill the smilies array
 		smilies = phpbb_smilies();
 		// hide the preview
-		toggle_wysiwim(wysiwim_preview);
+		toggle_wysiwym(wysiwym_preview);
 
 	};
 
@@ -1544,9 +1544,9 @@ var WYSIWYM = new function()
 * Set display of page element
 * ID = element id 
 **/
-function dE_wysiwim(ID)
+function dE_wysiwym(ID)
 {
-	toggle_wysiwim(ID);
+	toggle_wysiwym(ID);
 	if (document.getElementById(ID).style.display != 'none')
 	{
 		WYSIWYM.Update();
@@ -1554,7 +1554,7 @@ function dE_wysiwim(ID)
 	return true;
 }
 
-function wysiwim_resize(id, pix)
+function wysiwym_resize(id, pix)
 {
 	var box = document.getElementById(id);
 	var new_height = (parseInt(box.style.height, 10) ? parseInt(box.style.height, 10) : 200) + pix;
