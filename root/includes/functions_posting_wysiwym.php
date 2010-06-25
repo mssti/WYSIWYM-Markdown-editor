@@ -1,7 +1,7 @@
 <?php
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: functions_posting_wysiwym.php, [DEV] 0.0.6 2010/06/16 10:06:16 leviatan21 Exp $
+* @version: $Id: functions_posting_wysiwym.php, [BETA] 1.0.1 2010/06/25 10:06:25 leviatan21 Exp $
 * @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
@@ -38,7 +38,7 @@ function setup_wysiwym_editor()
 		return;
 	}
 
-	global $db, $template, $user, $auth, $config, $forum_id;
+	global $cache, $db, $template, $user, $auth, $config, $forum_id, $phpbb_root_path, $phpEx;
 
 	// HTML, BBCode, Smilies, Images and Flash status
 	if ($wmode == 'post')
@@ -56,6 +56,7 @@ function setup_wysiwym_editor()
 	$wmatch = array('\n', '\t', '/', '+|&amp;)+');
 	$wreplace = array("\\n", "\\t", "\/", ')');
 
+	
 	$template->assign_vars(array(
 		'S_LIVE_REVIEW'			=> (isset($config['wysiwym_enable'])) ? $config['wysiwym_enable'] : true,
 		'W_SYNTAX_HIGHLIGHT'	=> (isset($config['wysiwym_syntax_highlight'])) ? $config['wysiwym_syntax_highlight'] : 1,
@@ -69,6 +70,8 @@ function setup_wysiwym_editor()
 		'W_MAX_FONT_SIZE'		=> (int) $config['max_post_font_size'],
 		'W_MAX_IMG_HEIGHT'		=> (int) $config['max_post_img_height'],
 		'W_MAX_IMG_WIDTH'		=> (int) $config['max_post_img_width'],
+		'W_ATTACH_ICON_IMG'		=> $user->img('icon_topic_attach', ''),
+		'W_ATTACH_U_FILE'		=> append_sid($phpbb_root_path . 'download/file.' . $phpEx, 'mode=view&amp;id=%1$d'),
 
 		'W_VIEW_IMAGES'			=> ($user->optionget('viewimg')) ? 1 : 0,
 		'W_VIEW_FLASH'			=> ($user->optionget('viewflash')) ? 1 : 0,
@@ -97,6 +100,18 @@ function setup_wysiwym_editor()
 		'TOKEN_URL_FULL'		=> str_replace("\\", '\\\\', str_replace($wmatch, $wreplace, get_preg_expression('url'))),
 		/* Transform php regexp into JavaScript regexp - End */
 	));
+
+	$extensions = $cache->obtain_attach_extensions($forum_id);
+	foreach ($extensions as $extension => $data)
+	{
+		if (isset($data['allow_group']) && $data['allow_group'])
+		{
+			$template->assign_block_vars('attach_extensions', array(
+				'EXTENSION' => $extension,
+				'CATEGORY' => $data['display_cat'],
+			));
+		}
+	}
 
 	$sql = 'SELECT bbcode_tag, bbcode_match, bbcode_tpl
 		FROM ' . BBCODES_TABLE . '

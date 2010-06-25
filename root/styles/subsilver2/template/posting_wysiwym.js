@@ -1,6 +1,6 @@
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: posting_wysiwym.js, [DEV] 0.0.6 2010/06/16 10:06:16 leviatan21 Exp $
+* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1 2010/06/24 10:06:24 leviatan21 Exp $
 * @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
@@ -13,9 +13,8 @@
 
 /**
 * @todo :
+*	ACP On/Off options
 *	attachment improve
-*	code nested
-*	improve code ?
 **/
 
 /**
@@ -37,6 +36,8 @@
 *	config and forum permission for bbcodes, smilies, img, url, flash and quote
 *	improved url detection
 *	improved phpbb_tokens
+*	improved code and SyntaxHighlight
+*	nested bbcode
 *	Style dependance based off prosilver and subsilver2
 **/
 
@@ -58,6 +59,12 @@ var WYSIWYM = new function()
 	var tokens_ary;
 	var smilies;
 	var template;
+	var attachment_ary;
+	var attach_extensions = {
+		<!-- BEGIN attach_extensions -->
+		'{attach_extensions.EXTENSION}' : {'cat' : {attach_extensions.CATEGORY}}<!-- IF not attach_extensions.S_LAST_ROW -->,<!-- ENDIF -->
+		<!-- END attach_extensions -->
+	};
 	/* The phpbb editor element */
 	var phpbb_editor = '';
 	/* The wysiwym editor element */
@@ -123,7 +130,15 @@ var WYSIWYM = new function()
 			},
 			'attach' : {
 				'inline_attachment_open' : '<div class="inline-attachment">',
-				'inline_attachment_close' : '</div>'
+				'inline_attachment_close' : '</div>',
+				'inline_attach_file' : '<dl class="file"><dt>{W_ATTACH_ICON_IMG} <!-- ia({attach_id}) --><a class="postlink" href="{attach_url}">{attach_text}</a><!-- ia({attach_id}) --></dt>{attach_comment}</dl>',
+				'inline_attach_img' : '<dl class="file"><dt class="attach-image"><img src="{attach_url}" alt="{attach_name}" onclick="viewableArea(this);" />{attach_comment}<dd>{attach_name}</dd></dt>',
+				'inline_attach_comment' : '<dd><em>{attach_text}</em></dd>',
+				'attachment_open' : '<div class="clear"></div><dl class="attachbox" style="font-size: 0.8em;"><dt>{LA_ATTACHMENTS}</dt>',
+				'attachment_close' : '</dl>',
+				'attach_file' : '<dd><dl class="file"><dt>{W_ATTACH_ICON_IMG} <a class="postlink" href="{attach_url}">{attach_name}</a></dt>{attach_text}</dl></dd>',
+				'attach_img' : '<dt class="attach-image"><img src="attach_url" alt="{attach_name}" onclick="viewableArea(this);" /></dt>',
+				'attach_comment' : '<dd><em>{attach_comment}</em></dd>'
 			}
 		},
 		'subsilver2' : {
@@ -141,8 +156,16 @@ var WYSIWYM = new function()
 				'code_close' : '</code></div>'
 			},
 			'attach' : {
-				'inline_attachment_open' : '<div class="attachtitle">{L_ATTACHMENT}:</div><div class="attachcontent">',
-				'inline_attachment_close' : '</div>'
+				'inline_attachment_open' : '<div class="attachtitle">{LA_ATTACHMENT}:</div><div class="attachcontent">',
+				'inline_attachment_close' : '</div>',
+				'inline_attach_file' : '{attach_comment}<span class="genmed">{W_ATTACH_ICON_IMG} <!-- ia({attach_id}) --><a href="{attach_url}">{attach_text}</a><!-- ia({attach_id}) --></span><br />',
+				'inline_attach_img' : '{attach_comment}<img src="{attach_url}" alt="{attach_name}" /><br /><span class="gensmall">{attach_name}</span><br />',
+				'inline_attach_comment' : '<span class="gensmall"><b>{LA_FILE_COMMENT}:</b> {attach_text}</span><br />',
+				'attachment_open' : '<br clear="all" /><br /><table class="tablebg" width="100%" cellspacing="1" style="font-size: 0.9em;"><tr><td class="row3"><b class="genmed">{LA_ATTACHMENTS}: </b></td></tr>',
+				'attachment_close' : '</table>',
+				'attach_file' : '<tr><td class="row2">{attach_text}<span class="genmed">{W_ATTACH_ICON_IMG} <a href="{attach_url}">{attach_name}</a></span><br /></td></tr>',
+				'attach_img' : '<tr><td class="row2">{attach_comment}<img src="{attach_url}" alt="{attach_name}" /><br /><span class="gensmall">{attach_name}</span><br /></td></tr>',
+				'attach_comment' : '<span class="gensmall"><b>{LA_FILE_COMMENT}:</b> {attach_comment}</span><br />'
 			}
 		}
 	};
@@ -1110,19 +1133,108 @@ var WYSIWYM = new function()
 	**/
 	bbcode_attachment = function(full_tag, attach_num, attach_name)
 	{
-		var html  = '<div class="inline-attachment"><dl class="file" style="height: 1em;">' + 
-						'<strong><!-- ia(' + attach_num + ') -->' + attach_name + '<!-- ia(' + attach_num + ') --></strong>' + 
-					'</dl></div>';
-		/**
-		var html  = '<div class="inline-attachment">';
-			html += '<dl class="file">' +
-						'<dt><a class="postlink" href="' + content + '">' + content + '</a></dt>' +
-						'<!-- IF _file.COMMENT --><dd><em>{_file.COMMENT}</em></dd><!-- ENDIF -->' +
-						'<dd>({_file.FILESIZE} {_file.SIZE_LANG}) {_file.L_DOWNLOAD_COUNT}</dd>' +
-					'</dl>';
-			html += '</div>';
-		**/
+		attachment_ary[attachment_ary.length] = '"' + attach_num + '"';
+		var attach_url = '{W_ATTACH_U_FILE}'.replace('%1$d', attach_num);
+		var attach_data = get_attachment_data(attach_num);
+
+		var html  = template[config['template']]['attach']['inline_attachment_open'];
+		var	attach_comment = (attach_data['COMMENT']) ? template[config['template']]['attach']['inline_attach_comment'].replace('{attach_text}', attach_data['COMMENT']) : '';
+		// Treat this as an image or file ?
+		if (attach_extensions[attach_data['EXTENSION']]['cat'] == 1)
+		{
+			html += template[config['template']]['attach']['inline_attach_img'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']).replace('{attach_comment}', attach_comment).replace('{attach_name}', attach_data['NAME']);
+		}
+		else
+		{
+			html += template[config['template']]['attach']['inline_attach_file'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_text}', attach_data['NAME']).replace('{attach_comment}', attach_comment);
+		}
+			html += template[config['template']]['attach']['inline_attachment_close'];
 		return html;
+	};
+
+	parse_attachment = function(str)
+	{
+		var id = 0;
+		var have_attach;
+		var attach_el;
+		var attach_data;
+		var html = '';
+
+		if (config['template'] == 'prosilver')
+		{
+			// First check if the attach box is available
+			have_attach = document.forms[form_name].elements['comment_list_' + id];
+			// Then check if we have an attach by checking the anchor text
+			if (have_attach)
+			{
+				have_attach = have_attach.parentNode.parentNode.getElementsByTagName('dd')[1].childNodes[0].firstChild.data;
+			}
+		}
+		else if (config['template'] == 'subsilver2')
+		{
+			// First check if the attach box is available
+			have_attach = document.forms[form_name].elements['attachments'];
+			// Then check if we have an attach by checking the select drop-down
+			if (have_attach)
+			{
+				have_attach = have_attach.length;
+			}
+		}
+
+		// If we have at least one attached file, start to parse it
+		if (have_attach)
+		{
+			// We have one, there are more ?
+			while (true)
+			{
+				// Already parse as in-line, skip it ?
+				if (in_array('"'+id+'"', attachment_ary))
+				{
+					id++;
+					continue;
+				}
+				var attachments = (config['template'] == 'prosilver') ? document.forms[form_name].elements['comment_list_' + id] : document.forms[form_name].elements['attachments'].options[id];
+
+				if (attachments)
+				{
+					attach_data = get_attachment_data(id);
+					var	attach_comment = (attach_data['COMMENT']) ? template[config['template']]['attach']['attach_comment'].replace('{attach_comment}', attach_data['COMMENT']) : '';
+					// Treat this as an image or file ?
+					if (attach_extensions[attach_data['EXTENSION']]['cat'] == 1)
+					{
+						html += template[config['template']]['attach']['attach_img'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']).replace('{attach_comment}', attach_comment).replace('{attach_name}', attach_data['NAME']);
+					}
+					else
+					{
+						html += template[config['template']]['attach']['attach_file'].replace('{attach_text}', attach_comment).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']);
+					}
+					id++;
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+
+		if (html !== '')
+		{
+			html = template[config['template']]['attach']['attachment_open'] + html + template[config['template']]['attach']['attachment_close'];
+			
+		}
+
+		return str + html;
+	};
+
+	get_attachment_data = function(id)
+	{
+		var attach_el = 'attachment_data[' + id + ']';
+		var attach_id = document.forms[form_name].elements[attach_el + '[attach_id]'].value;
+		var attach_url = '{W_ATTACH_U_FILE}'.replace('%1$d', attach_id);
+		var attach_name = document.forms[form_name].elements[attach_el + '[real_filename]'].value;
+		var attach_comment = document.forms[form_name].elements[attach_el + '[attach_comment]'].value;
+		var attach_extension = attach_name.substring(attach_name.lastIndexOf(".") + 1)
+		return { 'ID' : attach_id, 'URL' : attach_url, 'NAME' : attach_name, 'COMMENT' : attach_comment, 'EXTENSION' : attach_extension };
 	};
 
 	/**
@@ -1338,6 +1450,8 @@ var WYSIWYM = new function()
 		var have_quote	= (str.indexOf('[quote') > -1 ? true : false);
 		var have_list	= (str.indexOf('[list') > -1 ? true : false);
 		var have_smilie	= false;
+		//Reset attach
+			attachment_ary = [];
 
 		/** Have the post a possible bbcode? 
 		*	and the user want to display it 
@@ -1434,6 +1548,10 @@ var WYSIWYM = new function()
 			}
 		}
 		/* Check number of links - End */
+
+		/* Not in-line attach - Start */
+		str = parse_attachment(str);
+		/* Not in-line attach - Start */
 
 		/* convert CRLF to <br> */
 		str = str.replace(/\n/g, "<br />");

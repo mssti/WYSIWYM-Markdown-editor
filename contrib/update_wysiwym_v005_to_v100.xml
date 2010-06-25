@@ -5,9 +5,9 @@
 	<header>
 		<license><![CDATA[http://opensource.org/licenses/gpl-license.php GNU General Public License v2]]></license>
 		
-		<title lang="en"><![CDATA[WYSIWYM Markdown editor : upgrade to 0.0.6]]></title>
+		<title lang="en"><![CDATA[WYSIWYM Markdown editor : upgrade to 1.0.0]]></title>
 
-		<description lang="en"><![CDATA[This file provides instructions for upgrade WYSIWYM MOD from version 0.0.5 to version 0.0.6]]></description>
+		<description lang="en"><![CDATA[This file provides instructions for upgrade WYSIWYM MOD from version 0.0.5 to version 1.0.0]]></description>
 
 		<author-notes lang="en"><![CDATA[See the main install file for any additional information about the MOD.
 
@@ -29,7 +29,7 @@ Before adding this MOD to your forum, you should back up all files related to th
 			</author>
 		</author-group>
 		
-		<mod-version>0.0.5</mod-version>
+		<mod-version>1.0.0</mod-version>
 
 		<installation>
 			<level>easy</level>
