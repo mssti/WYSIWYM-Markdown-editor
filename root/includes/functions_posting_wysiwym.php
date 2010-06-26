@@ -55,7 +55,6 @@ function setup_wysiwym_editor()
 	$server_url = generate_board_url();
 	$wmatch = array('\n', '\t', '/', '+|&amp;)+');
 	$wreplace = array("\\n", "\\t", "\/", ')');
-
 	
 	$template->assign_vars(array(
 		'S_LIVE_REVIEW'			=> (isset($config['wysiwym_enable'])) ? $config['wysiwym_enable'] : true,
@@ -106,7 +105,7 @@ function setup_wysiwym_editor()
 	{
 		if (isset($data['allow_group']) && $data['allow_group'])
 		{
-			$template->assign_block_vars('attach_extensions', array(
+			$template->assign_block_vars('wysiwym_attach_extensions', array(
 				'EXTENSION' => $extension,
 				'CATEGORY' => $data['display_cat'],
 			));

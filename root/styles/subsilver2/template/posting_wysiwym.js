@@ -1,6 +1,6 @@
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1 2010/06/24 10:06:24 leviatan21 Exp $
+* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1 2010/06/26 10:06:26 leviatan21 Exp $
 * @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
@@ -14,7 +14,7 @@
 /**
 * @todo :
 *	ACP On/Off options
-*	attachment improve
+*	attachment improve (media files)
 **/
 
 /**
@@ -61,9 +61,9 @@ var WYSIWYM = new function()
 	var template;
 	var attachment_ary;
 	var attach_extensions = {
-		<!-- BEGIN attach_extensions -->
-		'{attach_extensions.EXTENSION}' : {'cat' : {attach_extensions.CATEGORY}}<!-- IF not attach_extensions.S_LAST_ROW -->,<!-- ENDIF -->
-		<!-- END attach_extensions -->
+		<!-- BEGIN wysiwym_attach_extensions -->
+		'{wysiwym_attach_extensions.EXTENSION}' : {'cat' : {wysiwym_attach_extensions.CATEGORY}}<!-- IF not wysiwym_attach_extensions.S_LAST_ROW -->,<!-- ENDIF -->
+		<!-- END wysiwym_attach_extensions -->
 	};
 	/* The phpbb editor element */
 	var phpbb_editor = '';
@@ -569,6 +569,11 @@ var WYSIWYM = new function()
 						}
 						else if (get_preg_expression('www_url').test(url))
 						{
+							// if there is no scheme, then add http schema
+							if (!get_preg_expression('scheme').test(url))
+							{
+								url = 'http://' + url;
+							}
 							return bbcode_url(url, '', '', '', 'w');
 						}
 					}
@@ -599,6 +604,11 @@ var WYSIWYM = new function()
 						}
 						else if (get_preg_expression('www_url').test(url))
 						{
+							// if there is no scheme, then add http schema
+							if (!get_preg_expression('scheme').test(url))
+							{
+								url = 'http://' + url;
+							}
 							return bbcode_url(url, text, '', '', 'w');
 						}
 					}
@@ -1139,7 +1149,7 @@ var WYSIWYM = new function()
 
 		var html  = template[config['template']]['attach']['inline_attachment_open'];
 		var	attach_comment = (attach_data['COMMENT']) ? template[config['template']]['attach']['inline_attach_comment'].replace('{attach_text}', attach_data['COMMENT']) : '';
-		// Treat this as an image or file ?
+		// Treat this as image or file ?
 		if (attach_extensions[attach_data['EXTENSION']]['cat'] == 1)
 		{
 			html += template[config['template']]['attach']['inline_attach_img'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']).replace('{attach_comment}', attach_comment).replace('{attach_name}', attach_data['NAME']);
@@ -1199,7 +1209,7 @@ var WYSIWYM = new function()
 				{
 					attach_data = get_attachment_data(id);
 					var	attach_comment = (attach_data['COMMENT']) ? template[config['template']]['attach']['attach_comment'].replace('{attach_comment}', attach_data['COMMENT']) : '';
-					// Treat this as an image or file ?
+					// Treat this as image or file ?
 					if (attach_extensions[attach_data['EXTENSION']]['cat'] == 1)
 					{
 						html += template[config['template']]['attach']['attach_img'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']).replace('{attach_comment}', attach_comment).replace('{attach_name}', attach_data['NAME']);
