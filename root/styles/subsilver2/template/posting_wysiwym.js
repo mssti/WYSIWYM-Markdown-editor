@@ -1,6 +1,6 @@
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1 2010/06/26 10:06:26 leviatan21 Exp $
+* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1 2010/06/27 10:06:27 leviatan21 Exp $
 * @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
@@ -561,11 +561,11 @@ var WYSIWYM = new function()
 					{
 						if (get_preg_expression('relative_url').test(url))
 						{
-							return bbcode_url(url, '', '', '', 'l', '-local');
+							return bbcode_url(url, '', '', 'l', '-local');
 						}
 						else if (get_preg_expression('url').test(url))
 						{
-							return bbcode_url(url, '', '', '', 'm');
+							return bbcode_url(url, '', '', 'm', '');
 						}
 						else if (get_preg_expression('www_url').test(url))
 						{
@@ -574,7 +574,7 @@ var WYSIWYM = new function()
 							{
 								url = 'http://' + url;
 							}
-							return bbcode_url(url, '', '', '', 'w');
+							return bbcode_url(url, '', '', 'w', '');
 						}
 					}
 					return '[url]' + url + '[/url]';
@@ -596,11 +596,11 @@ var WYSIWYM = new function()
 					{
 						if (get_preg_expression('relative_url').test(url))
 						{
-							return bbcode_url(url, text, '', '', 'l', '-local');
+							return bbcode_url(url, text, '', 'l', '-local');
 						}
 						else if (get_preg_expression('url').test(url))
 						{
-							return bbcode_url(url, text, '', '', 'm');
+							return bbcode_url(url, text, '', 'm', '');
 						}
 						else if (get_preg_expression('www_url').test(url))
 						{
@@ -609,7 +609,7 @@ var WYSIWYM = new function()
 							{
 								url = 'http://' + url;
 							}
-							return bbcode_url(url, text, '', '', 'w');
+							return bbcode_url(url, text, '', 'w', '');
 						}
 					}
 					return '[url=' + url + ']' + text + '[/url]';
@@ -1273,6 +1273,8 @@ var WYSIWYM = new function()
 		if (url.indexOf(board_url) > -1)
 		{
 			short_url = url.replace(new RegExp(board_url, 'gi'), '');
+			tag = 'l';
+			css_class = '-local';
 		}
 		return bbcode_url(url, short_url, before, tag, css_class);
 	};
@@ -1280,28 +1282,36 @@ var WYSIWYM = new function()
 	bbcode_url = function(url, short_url, before, tag, css_class)
 	{
 		var board_url	= '{BOARD_URL}';
+		var prime_links = false;
+		var target		= (prime_links) ? ' onclick="window.open(this.href);return false;"' : '';
+		var rel			= (prime_links) ? ' rel="nofollow"' : '';
 
-		tag = (tag) ? tag : 'w';
-		css_class = (css_class) ? css_class : '';
 		short_url = (short_url) ? short_url : url;
 
 		// Is this a link to somewhere inside this board?
 		if (url.indexOf(board_url) > -1)
 		{
-			// Remove the session id from the url
+			// Remove the session id from the url and the short_url
 			if (url.indexOf('sid=') > 0)
 			{
 				url = url.replace(/(&|\?)sid=[0-9a-f]{32,}&/gi, '$1');
 				url = url.replace(/(&|\?)sid=[0-9a-f]{32,}$/gi, '');
+				short_url = short_url.replace(/(&|\?)sid=[0-9a-f]{32,}&/gi, '$1');
+				short_url = short_url.replace(/(&|\?)sid=[0-9a-f]{32,}$/gi, '');
 			}
 			css_class = '-local';
-			tag	  = 'l';
+			tag = 'l';
+			target = '';
+			rel = '';
 		}
+
 
 		url = url.replace(/\s/g, '%20');
 		short_url = deEntify(short_url);
+		tag = (tag) ? tag : 'w';
+		css_class = 'postlink' + css_class;
 
-		return before + '<!-- ' + tag + ' --><a href="' + url + '" class="postlink' + css_class + '">' + short_url + '</a><!-- ' + tag + ' -->';
+		return before + '<!-- ' + tag + ' --><a href="' + url + '" class="' + css_class + '"' + target + rel + '>' + short_url + '</a><!-- ' + tag + ' -->';
 	};
 
 	/**
