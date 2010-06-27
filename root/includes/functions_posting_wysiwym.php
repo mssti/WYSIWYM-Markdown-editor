@@ -1,7 +1,7 @@
 <?php
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: functions_posting_wysiwym.php, [BETA] 1.0.1 2010/06/25 10:06:25 leviatan21 Exp $
+* @version: $Id: functions_posting_wysiwym.php, [BETA] 1.0.1 2010/06/26 10:06:26 leviatan21 Exp $
 * @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
@@ -123,7 +123,7 @@ function setup_wysiwym_editor()
 			'WBBCODE_NAME'		=> strtolower($row['bbcode_tag']),
 			'WBBCODE_TAG'		=> preg_replace('(=(.*?)?)', '', strtolower($row['bbcode_tag'])),
 			'WBBCODE_MATCH'		=> strtolower($row['bbcode_match']),
-			'WBBCODE_REPLACE'	=> strtolower($row['bbcode_tpl']),
+			'WBBCODE_REPLACE'	=> str_replace(array ("\n", "\r", "\t"), array ("", "", ""), strtolower($row['bbcode_tpl'])),
 		));
 	}
 	$db->sql_freeresult($result);
