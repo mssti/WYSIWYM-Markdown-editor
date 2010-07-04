@@ -5,21 +5,15 @@
 	<header>
 		<license><![CDATA[http://opensource.org/licenses/gpl-license.php GNU General Public License v2]]></license>
 		
-		<title lang="en"><![CDATA[WYSIWYM Markdown editor]]></title>
+		<title lang="en"><![CDATA[WYSIWYM Markdown editor : upgrade to 1.0.1]]></title>
 
-		<description lang="en"><![CDATA[This is a real time preview]]></description>
+		<description lang="en"><![CDATA[This file provides instructions for upgrade WYSIWYM MOD from version 1.0.0 to version 1.0.1-PL1]]></description>
 
-		<author-notes lang="en"><![CDATA[This mod is not a WYSIWYG editor. Rather, it is a WYSIWYM Markdown editor (what you see Is what you mean).
--------------------------------------------------------------------
-phpBB version: phpbb 3.0.7-PL1
--------------------------------------------------------------------
-Requirements: JavaScript enabled
--------------------------------------------------------------------
-License: GNU General Public License v2
+		<author-notes lang="en"><![CDATA[See the main install file for any additional information about the MOD.
 -------------------------------------------------------------------
 Before adding this MOD to your forum, you should back up all files related to this MOD.
 -------------------------------------------------------------------
-After added this MOD, see DIY instructions at the end of this dodument.
+On every update make sure you refresh the template and also the browser cache, see DIY instructions at the end of this dodument.
 ]]></author-notes>
 
 		<author-group>
@@ -43,7 +37,7 @@ After added this MOD, see DIY instructions at the end of this dodument.
 		</installation>
 
 		<link-group>
-			<link type="template" href="contrib/subsilver2.xml" lang="en">Template : Changes for Subsilver2 based off style</link>
+			<link type="parent" href="../install_MSSTI_WYSIWYM.xml" lang="en">Code change</link>
 		</link-group>
 
 	</header>
@@ -55,31 +49,14 @@ After added this MOD, see DIY instructions at the end of this dodument.
 			<file from="root/styles/prosilver/template/*.*" to="styles/prosilver/template/*.*" />
 		</copy>
 
-		<open src="includes/functions_display.php">
-			<edit>
-				<find><![CDATA[		$i++;
-	}
-	$db->sql_freeresult($result);]]></find>
-				<action type="after-add"><![CDATA[
-/** MOD : WYSIWYM editor - Start **/
-	if (!defined('IN_WYSIWYM'))
-	{
-		global $phpbb_root_path, $phpEx;
-		include($phpbb_root_path . 'includes/functions_posting_wysiwym.' . $phpEx);
-	}
-	setup_wysiwym_editor();
-/** MOD : WYSIWYM editor - Start **/
-]]></action>
-			</edit>
-		</open>
-
 		<open src="styles/prosilver/template/editor.js">
 			<edit>
-				<find><![CDATA[			// Add tags around selection
-			document.selection.createRange().text = bbopen + theSelection + bbclose;
-			document.forms[form_name].elements[text_name].focus();
-			theSelection = '';]]></find>
-				<action type="after-add"><![CDATA[
+				<find><![CDATA[
+/** MOD : WYSIWYM editor - Start **/
+			wysiwym_editor();
+/** MOD : WYSIWYM editor - End **/
+]]></find>
+				<action type="replace-with"><![CDATA[
 /** MOD : WYSIWYM editor (1) - Start **/
 			wysiwym_editor();
 /** MOD : WYSIWYM editor (1) - End **/
@@ -87,10 +64,12 @@ After added this MOD, see DIY instructions at the end of this dodument.
 			</edit>
 
 			<edit>
-				<find><![CDATA[		mozWrap(document.forms[form_name].elements[text_name], bbopen, bbclose);
-		document.forms[form_name].elements[text_name].focus();
-		theSelection = '';]]></find>
-				<action type="after-add"><![CDATA[
+				<find><![CDATA[
+/** MOD : WYSIWYM editor - Start **/
+		wysiwym_editor();
+/** MOD : WYSIWYM editor - End **/
+]]></find>
+				<action type="replace-with"><![CDATA[
 /** MOD : WYSIWYM editor (2) - Start **/
 		wysiwym_editor();
 /** MOD : WYSIWYM editor (2) - End **/
@@ -98,11 +77,12 @@ After added this MOD, see DIY instructions at the end of this dodument.
 			</edit>
 
 			<edit>
-				<find><![CDATA[	if (!popup) 
-	{
-		textarea.focus();
-	}]]></find>
-				<action type="after-add"><![CDATA[
+				<find><![CDATA[
+/** MOD : WYSIWYM editor - Start **/
+	wysiwym_editor(popup);
+/** MOD : WYSIWYM editor - End **/
+]]></find>
+				<action type="replace-with"><![CDATA[
 /** MOD : WYSIWYM editor (3) - Start **/
 	wysiwym_editor(popup);
 /** MOD : WYSIWYM editor (3) - End **/
@@ -110,14 +90,20 @@ After added this MOD, see DIY instructions at the end of this dodument.
 			</edit>
 
 			<edit>
-				<find><![CDATA[		// we ignore the end value for IE, this is already dirty enough and we don't need it
-		caretPos.start = txtarea.sel_start;
-		caretPos.end = txtarea.sel_start;			
+				<find><![CDATA[/**
+* MOD : WYSIWYM editor - Start
+* Chech if the WYSIWYM Markdown editor is available and eventually update it
+**/
+function wysiwym_editor()
+{ 
+	if (typeof(WYSIWYM) != 'undefined')
+	{
+		WYSIWYM.Update();
 	}
-
-	return caretPos;
-}]]></find>
-				<action type="after-add"><![CDATA[
+}
+/** MOD : WYSIWYM editor - End **/
+]]></find>
+				<action type="replace-with"><![CDATA[
 /**
 * MOD : WYSIWYM editor - Start
 * Check if the WYSIWYM Markdown editor is available and eventually update it
@@ -142,15 +128,6 @@ function wysiwym_editor(popup)
 }
 /** MOD : WYSIWYM editor - End **/
 ]]></action>
-			</edit>
-		</open>
-
-		<open src="styles/prosilver/template/posting_buttons.html">
-			<edit>
-				<find><![CDATA[<div id="format-buttons">]]></find>
-				<action type="after-add"><![CDATA[<!-- IF S_LIVE_REVIEW -->
-	<input type="button" class="button2" name="wysiwym" value="{L_PREVIEW}" onclick="dE_wysiwym('wysiwym_preview');" />&nbsp;
-<!-- ENDIF -->]]></action>
 			</edit>
 		</open>
 
@@ -182,38 +159,11 @@ function wysiwym_editor(popup)
 
 		<diy-instructions lang="en"><![CDATA[IMPORTANT !
 
-#####################################################################
-Log on to Administration Control Panel
+OVERWRITE all your previous files with the new ones!
 
-#####################################################################
-A) Purge the cache :
+Please make sure of it, some FTP programs don't do it fine.
 
-	A.1) Navigate to General Tab
-	A.2) look at Purge the cache
-	A.3) Click on "Run Now" button at right
-	A.4) in the next screen, click on "Yes"
-
-#####################################################################
-B) Refresh the templates :
-
-	B.1) Navigate to "Styles" Tab.
-	B.2) Under "Style components " click on "Templates".
-	B.3) Under "Actions" click on "Refresh".
-	B.4) in the next screen, click on "Yes"
-
-#####################################################################
-C) Clear your browser cache.
-	Usually by pressing F5 or Ctrl+F5 key in your browser.
-	Or here you have some pages that might help you :
-		http://en.wikipedia.org/wiki/Wikipedia:Bypass_your_cache
-		http://www.wikihow.com/Clear-Your-Browser%27s-Cache
-		http://kb.iu.edu/data/ahic.html
-
-	Mostrly in in the posting page, writing Private message, editing the signature and at the smilies pop-up window
-		
-#####################################################################
-D) Enjoy it !.	
-]]></diy-instructions>
+Makes sure you follow the DIY instruction in the main install_MSSTI_WYSIWYM.xml file.]]></diy-instructions>
 
 	</action-group>
 </mod>

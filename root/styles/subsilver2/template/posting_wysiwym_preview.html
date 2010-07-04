@@ -1,34 +1,37 @@
 
 <table class="tablebg" width="100%" cellspacing="1" id="wysiwym_preview">
-<tr> 
-	<th><span class="Show-Hide" onclick="wysiwym_resize('wysiwym_editor', -10);">[-]</span> <span class="Show-Hide" onclick="wysiwym_resize('wysiwym_editor', 10);">[+]</span>{L_PREVIEW}: {SUBJECT}</th>
+<tr>
+	<th><span class="Show-Hide" onclick="wysiwym_resize('wysiwym_postbody', -10);">[-]</span> <span class="Show-Hide" onclick="wysiwym_resize('wysiwym_postbody', 10);">[+]</span><!-- IF SIGNATURE -->{L_SIGNATURE_PREVIEW}<!-- ELSE -->{L_PREVIEW}: {SUBJECT}<!-- ENDIF --></th>
 </tr>
 <tr> 
 	<td class="row1">
 		<table width="100%" border="0" cellspacing="0" cellpadding="0">
 		<tr>
 			<td>
-				<div class="postbody">
-					<div id="wysiwym_editor" name="wysiwym_editor" class="xxcontent">{L_NA}</div>
-					<script type="text/javascript">
-					// <![CDATA[
-					<!-- INCLUDE posting_wysiwym.js -->
-					/**
-					* Set display of page element
-					* s[-1,0,1] = hide,toggle display,show
-					**/
-					function toggle_wysiwym(n, s)
-					{
-						var e = document.getElementById(n);
-						if (!s)
-						{
-							s = (e.style.display == '') ? -1 : 1;
-						}
-						e.style.display = (s == 1) ? '' : 'none';
-					}
-					// ]]>
-					</script>
+				<div id="wysiwym_postbody">
+					<div id="wysiwym_content" name="wysiwym_content" class="postbody">{L_NA}</div>
+					<div id="wysiwym_attach" name="wysiwym_attach"></div>
+					<!-- IF W_SIGNATURE and not SIGNATURE --><div id="wysiwym_sig" class="postbody"><br />_________________<br />{W_SIGNATURE}</div><br clear="all" /><!-- ENDIF -->
 				</div>
+				<br clear="all" />
+				<script type="text/javascript">
+				// <![CDATA[
+				<!-- INCLUDE posting_wysiwym.js -->
+				/**
+				* Set display of page element
+				* s[-1,0,1] = hide,toggle display,show
+				**/
+				function toggle_wysiwym(n, s)
+				{
+					var e = document.getElementById(n);
+					if (!s)
+					{
+						s = (e.style.display == '') ? -1 : 1;
+					}
+					e.style.display = (s == 1) ? '' : 'none';
+				}
+				// ]]>
+				</script>
 			</td>
 		</tr>
 		</table>
@@ -38,4 +41,3 @@
 	<td class="spacer"><img src="images/spacer.gif" alt="" width="1" height="1" /></td>
 </tr>
 </table>
-<br clear="all" />

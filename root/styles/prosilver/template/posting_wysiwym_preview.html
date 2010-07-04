@@ -1,29 +1,31 @@
 <!-- IF S_BBCODE_ALLOWED -->
 <div class="panel <!-- IF S_PRIVMSGS -->pm<!-- ELSE -->bg2<!-- ENDIF -->" id="wysiwym_preview">
 	<div class="inner"><span class="corners-top"><span></span></span>
-		<h3><span class="Show-Hide" onclick="wysiwym_resize('wysiwym_editor', -10);">[-]</span> <span class="Show-Hide" onclick="wysiwym_resize('wysiwym_editor', 10);">[+]</span>{L_PREVIEW}: {SUBJECT}</h3>
-		<div class="postbody">
-			<div id="wysiwym_editor" name="wysiwym_editor" class="content">{L_NA}</div>
-			<script type="text/javascript">
-			// <![CDATA[
-			<!-- INCLUDE posting_wysiwym.js -->
-			/**
-			* Set display of page element
-			* s[-1,0,1] = hide,toggle display,show
-			**/
-			function toggle_wysiwym(n, s)
-			{
-				var e = document.getElementById(n);
-				if (!s)
-				{
-					s = (e.style.display == '' || e.style.display == 'block') ? -1 : 1;
-				}
-				e.style.display = (s == 1) ? 'block' : 'none';
-			}
-			// ]]>
-			</script>
-			<br />
+		<h3><span class="Show-Hide" onclick="wysiwym_resize('wysiwym_postbody', -10);">[-]</span> <span class="Show-Hide" onclick="wysiwym_resize('wysiwym_postbody', 10);">[+]</span><!-- IF SIGNATURE -->{L_SIGNATURE_PREVIEW}<!-- ELSE -->{L_PREVIEW}: {SUBJECT}<!-- ENDIF --></h3>
+		<div id="wysiwym_postbody" class="postbody">
+			<div id="wysiwym_content" name="wysiwym_content" class="content">{L_NA}</div>
+			<div id="wysiwym_attach" name="wysiwym_attach"></div>
+			<!-- IF W_SIGNATURE and not SIGNATURE --><div id="wysiwym_sig" class="signature">{W_SIGNATURE}</div><!-- ENDIF -->
 		</div>
+		<br />
+		<script type="text/javascript">
+		// <![CDATA[
+		<!-- INCLUDE posting_wysiwym.js -->
+		/**
+		* Set display of page element
+		* s[-1,0,1] = hide,toggle display,show
+		**/
+		function toggle_wysiwym(n, s)
+		{
+			var e = document.getElementById(n);
+			if (!s)
+			{
+				s = (e.style.display == '' || e.style.display == 'block') ? -1 : 1;
+			}
+			e.style.display = (s == 1) ? 'block' : 'none';
+		}
+		// ]]>
+		</script>
 	<span class="corners-bottom"><span></span></span></div>
 </div>
 <div class="clear"></div>

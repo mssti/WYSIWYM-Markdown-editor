@@ -1,44 +1,13 @@
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1 2010/06/27 10:06:27 leviatan21 Exp $
+* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1-PL1 2010/07/04 10:07:04 leviatan21 Exp $
 * @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
-* 
 **/
 
 /**
 * @ignore 
-**/
-
-/**
-* @todo :
-*	ACP On/Off options
-*	attachment improve (media files)
-**/
-
-/**
-* @done :
-*	Optimized code
-*	font size & font color click.
-*	Maximum nested quotes per post
-*	images optionget
-*	flash optionget
-*	Disable BBCode
-*	Disable smilies
-*	Do not automatically parse URLs & emails
-*	custom bbcodes
-*	Smilies
-*	SyntaxHighlight
-*	min_post_chars and max_post_chars
-*	max_post_smilies
-*	max_post_urls
-*	config and forum permission for bbcodes, smilies, img, url, flash and quote
-*	improved url detection
-*	improved phpbb_tokens
-*	improved code and SyntaxHighlight
-*	nested bbcode
-*	Style dependance based off prosilver and subsilver2
 **/
 
 /**
@@ -49,7 +18,11 @@
 *	| || || || || || || || || | _ | | | | | |\___ \\___ \  | |  | | _ | |_ | |_| || | | | | |
 *	|_'__'__/|_'__'__/|_'__'__/|_||_| |_| |_|/____//____/  |_|  |_||_|\___| \___/ |_| |_| |_|
 *
+* @todo :
+*	ACP On/Off options
+*	attachment improve (media files)
 **/
+
 var WYSIWYM = new function()
 {
 	/* Set common variables - Start */
@@ -68,20 +41,18 @@ var WYSIWYM = new function()
 	/* The phpbb editor element */
 	var phpbb_editor = '';
 	/* The wysiwym editor element */
-	var wysiwym_editor = '';
+	var wysiwym_content = '';
 	/* The wysiwym editor object */
 	var wysiwym_preview = 'wysiwym_preview';
-	/* Display warnings as an alert? */
-	var display_warning = false;
-	/* Display code with highlight? */
-	var SyntaxHighlight = true;
 	/* Array that will carry all warnings messages */
 	var warn_msg = [];
 	/* Array that will carry all phpbb settings */
 	var config = {
 	//	'template'				: 'prosilver',
 		'template'				: 'subsilver2',
+		/* Display code with highlight? */
 		'Syntax_highlight'		: {W_SYNTAX_HIGHLIGHT},
+		/* Display warnings as an alert? */
 		'display_warning'		: {W_DISPLAY_WARN},
 		'block_height'			: {W_BLOCK_HEIGHT},
 
@@ -98,18 +69,20 @@ var WYSIWYM = new function()
 		'url_status'			: {W_BBCODE_URL},
 		'flash_status'			: {W_BBCODE_FLASH},
 		'quote_status'			: {W_BBCODE_QUOTE},
+		'attach_allowed'		: {W_BBCODE_ATTACH},
 		'max_quote_depth'		: {W_MAX_QUOTE_DEPTH},
 		/* Config options - End */
 
-		/* Post options - Start */
-		'min_post_chars'		: {W_MIN_CHARS_LIMIT},
-		'max_post_chars'		: {W_MAX_CHARS_LIMIT},
-		'max_post_smilies'		: {W_MAX_SMILIES_LIMIT},
-		'max_post_urls'			: {W_MAX_URL_LIMIT},
-		'max_post_font_size'	: {W_MAX_FONT_SIZE},
-		'max_post_img_height'	: {W_MAX_IMG_HEIGHT},
-		'max_post_img_width'	: {W_MAX_IMG_WIDTH}
-		/* Post options - End */
+		/* Max and Min values - Start */
+		'min_chars'				: {W_MIN_CHARS_LIMIT},
+		'max_chars'				: {W_MAX_CHARS_LIMIT},
+		'max_smilies'			: {W_MAX_SMILIES_LIMIT},
+		'max_urls'				: {W_MAX_URL_LIMIT},
+		'max_font_size'			: {W_MAX_FONT_SIZE},
+		'max_img_height'		: {W_MAX_IMG_HEIGHT},
+		'max_img_width'			: {W_MAX_IMG_WIDTH},
+		/* Max and Min values - End */
+		'prime_links'			: false
 	};
 	/* Set common variables - End */
 
@@ -131,13 +104,18 @@ var WYSIWYM = new function()
 			'attach' : {
 				'inline_attachment_open' : '<div class="inline-attachment">',
 				'inline_attachment_close' : '</div>',
-				'inline_attach_file' : '<dl class="file"><dt>{W_ATTACH_ICON_IMG} <!-- ia({attach_id}) --><a class="postlink" href="{attach_url}">{attach_text}</a><!-- ia({attach_id}) --></dt>{attach_comment}</dl>',
-				'inline_attach_img' : '<dl class="file"><dt class="attach-image"><img src="{attach_url}" alt="{attach_name}" onclick="viewableArea(this);" />{attach_comment}<dd>{attach_name}</dd></dt>',
-				'inline_attach_comment' : '<dd><em>{attach_text}</em></dd>',
-				'attachment_open' : '<div class="clear"></div><dl class="attachbox" style="font-size: 0.8em;"><dt>{LA_ATTACHMENTS}</dt>',
-				'attachment_close' : '</dl>',
-				'attach_file' : '<dd><dl class="file"><dt>{W_ATTACH_ICON_IMG} <a class="postlink" href="{attach_url}">{attach_name}</a></dt>{attach_text}</dl></dd>',
-				'attach_img' : '<dt class="attach-image"><img src="attach_url" alt="{attach_name}" onclick="viewableArea(this);" /></dt>',
+				'attachment_open' : '<div class="clear"></div><dl class="attachbox"><dt>{LA_ATTACHMENTS}</dt><dd>',
+				'attachment_close' : '</dd></dl>',
+
+				'attach_file' : '<dl class="file"><dt>{W_ATTACH_ICON_IMG} <a class="postlink" href="{attach_url}">{attach_name}</a></dt>{template_attach_comment}{template_attach_size}</dl>',
+				'inline_attach_file' : '<dl class="file"><dt>{W_ATTACH_ICON_IMG} <a class="postlink" href="{attach_url}">{attach_name}</a></dt>{template_attach_comment}{template_attach_size}</dl>',
+				'attach_file_size' : '<dd>({attach_size} {LA_KIB})</dd>',
+
+				'attach_img' : '<dl class="file"><dt class="attach-image"><img src="{attach_url}" alt="{attach_name}" onclick="viewableArea(this);" /></dt>{template_attach_comment}{template_attach_name}</dl>',
+				'inline_attach_img' : '<dl class="file"><dt class="attach-image"><img src="{attach_url}" alt="{attach_name}" onclick="viewableArea(this);" /></dt>{template_attach_comment}{template_attach_name}</dl>',
+				'attach_img_size' : ' ({attach_size} {LA_KIB})',
+				'attach_name' : '<dd>{attach_name}{template_attach_size}</dd>',
+
 				'attach_comment' : '<dd><em>{attach_comment}</em></dd>'
 			}
 		},
@@ -158,13 +136,19 @@ var WYSIWYM = new function()
 			'attach' : {
 				'inline_attachment_open' : '<div class="attachtitle">{LA_ATTACHMENT}:</div><div class="attachcontent">',
 				'inline_attachment_close' : '</div>',
-				'inline_attach_file' : '{attach_comment}<span class="genmed">{W_ATTACH_ICON_IMG} <!-- ia({attach_id}) --><a href="{attach_url}">{attach_text}</a><!-- ia({attach_id}) --></span><br />',
-				'inline_attach_img' : '{attach_comment}<img src="{attach_url}" alt="{attach_name}" /><br /><span class="gensmall">{attach_name}</span><br />',
-				'inline_attach_comment' : '<span class="gensmall"><b>{LA_FILE_COMMENT}:</b> {attach_text}</span><br />',
-				'attachment_open' : '<br clear="all" /><br /><table class="tablebg" width="100%" cellspacing="1" style="font-size: 0.9em;"><tr><td class="row3"><b class="genmed">{LA_ATTACHMENTS}: </b></td></tr>',
+
+				'attachment_open' : '<br clear="all" /><br /><table class="tablebg" width="98.5%" cellspacing="1"><tr><td class="row3"><b class="genmed">{LA_ATTACHMENTS}: </b></td></tr>',
 				'attachment_close' : '</table>',
-				'attach_file' : '<tr><td class="row2">{attach_text}<span class="genmed">{W_ATTACH_ICON_IMG} <a href="{attach_url}">{attach_name}</a></span><br /></td></tr>',
-				'attach_img' : '<tr><td class="row2">{attach_comment}<img src="{attach_url}" alt="{attach_name}" /><br /><span class="gensmall">{attach_name}</span><br /></td></tr>',
+
+				'attach_file' : '{template_attach_comment}<span class="genmed">{W_ATTACH_ICON_IMG} <a href="{attach_url}">{attach_name}</a>{template_attach_size}</span><br />',
+				'inline_attach_file' : '<tr><td class="row2">{template_attach_comment}<span class="genmed">{W_ATTACH_ICON_IMG} <a href="{attach_url}">{attach_name}</a>{template_attach_size}</span><br /></td></tr>',
+				'attach_file_size' : ' [{attach_size} {LA_KIB}]',
+
+				'attach_img' : '{template_attach_comment}<img src="{attach_url}" alt="{attach_name}" /><br />{template_attach_name}',
+				'inline_attach_img' : '<tr><td class="row2">{template_attach_comment}<img src="{attach_url}" alt="{attach_name}" /><br />{template_attach_name}</td></tr>',
+				'attach_img_size' : ' [ {attach_size} {LA_KIB} ]',
+				'attach_name' : '<span class="gensmall">{attach_name}{template_attach_size}</span><br />',
+
 				'attach_comment' : '<span class="gensmall"><b>{LA_FILE_COMMENT}:</b> {attach_comment}</span><br />'
 			}
 		}
@@ -178,27 +162,26 @@ var WYSIWYM = new function()
 		if (!document.getElementById('wysiwym_style'))
 		{
 			var css_def  = "#wysiwym_preview .Show-Hide { float: {S_CONTENT_FLOW_END}; margin: 0 0 0 5px; cursor: pointer; }\n";
-				css_def += "#wysiwym_preview .Show-Hide:hover {	color: #ff0000; }\n";
-				css_def += "#wysiwym_editor { overflow: auto; height: " + config['block_height'] + "px; padding-{S_CONTENT_FLOW_END}: 2px; }\n";
+				css_def += "#wysiwym_preview .Show-Hide:hover { color: #ff0000; }\n";
+				css_def += "#wysiwym_postbody { overflow: auto; height: " + config['block_height'] + "px; }\n";
+
 			/** Style dependance - Start **/
 			if (config['template'] == 'prosilver')
 			{
-				css_def += "#wysiwym_preview .postbody { height: auto; font-size: 99%; }\n";
-				css_def += "#wysiwym_editor .codebox { padding: 3px; background-color: #FFFFFF; font-size: 1em; border: 1px solid #d8d8d8; }\n";
-				css_def += "#wysiwym_editor .codebox div { font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #cccccc; margin-bottom: 3px; }\n";
-				css_def += "#wysiwym_editor .codebox code { color: #2E8B57; white-space: normal; display: block; font: 0.9em Monaco, 'Andale Mono','Courier New', Courier, mono; overflow: auto; max-height: 200px; padding-top: 5px; margin: 2px 0; }\n";
-				css_def += "#wysiwym_editor blockquote div { height: auto; width: 100%; }\n";
-				css_def += "#wysiwym_editor .error { font-size: 1em; }\n";
+				css_def += "#wysiwym_content .codebox { padding: 3px; background-color: #FFFFFF; font-size: 1em; border: 1px solid #d8d8d8; }\n";
+				css_def += "#wysiwym_content .codebox div { font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #cccccc; margin-bottom: 3px; }\n";
+				css_def += "#wysiwym_content .codebox code { color: #2E8B57; white-space: normal; display: block; font: 0.9em Monaco, 'Andale Mono','Courier New', Courier, mono; overflow: auto; max-height: 200px; padding-top: 5px; margin: 2px 0; }\n";
+			//	css_def += "#wysiwym_content blockquote div { height: auto; width: 100%; }\n";
+				css_def += "#wysiwym_content .error { font-size: 1em; }\n";
 			}
 			else if (config['template'] == 'subsilver2')
 			{
-				css_def += "#wysiwym_preview .postbody { font-size: 1.3em; line-height: 1.4em; font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif; }\n";
-				css_def += "#wysiwym_editor .codetitle { padding: 2px 4px; background-color: #A9B8C2; font-size: 0.8em; border: 1px solid #A9B8C2; }\n";
-				css_def += "#wysiwym_editor .codecontent { font-weight: normal; font-size: 0.85em; border: 1px solid #A9B8C2; padding: 5px; background-color: #FAFAFA; }\n";
-				css_def += "#wysiwym_editor .codecontent code { color: #006600; white-space: normal; display: block; font-family: Monaco, 'Courier New', monospace; }\n";
-				css_def += "#wysiwym_editor .quotetitle { color: #333333; background-color: #A9B8C2; font-size: 0.85em; font-weight: bold; padding: 4px; }\n";
-				css_def += "#wysiwym_editor .quotecontent { font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif;	background-color: #FAFAFA; color: #4B5C77; padding: 5px; font-size: 1em; border-color: #A9B8C2; border-width: 0 1px 1px 1px; border-style: solid; }\n";
-			//	css_def += "#wysiwym_editor .error { font-size: 1em; }\n";
+				css_def += "#wysiwym_content .codetitle { padding: 2px 4px; background-color: #A9B8C2; font-size: 0.8em; border: 1px solid #A9B8C2; }\n";
+				css_def += "#wysiwym_content .codecontent { font-weight: normal; font-size: 0.85em; border: 1px solid #A9B8C2; padding: 5px; background-color: #FAFAFA; }\n";
+				css_def += "#wysiwym_content .codecontent code { color: #006600; white-space: normal; display: block; font-family: Monaco, 'Courier New', monospace; }\n";
+			//	css_def += "#wysiwym_content .quotetitle { color: #333333; background-color: #A9B8C2; font-size: 0.85em; font-weight: bold; padding: 4px; }\n";
+			//	css_def += "#wysiwym_content .quotecontent { font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif;	background-color: #FAFAFA; color: #4B5C77; padding: 5px; font-size: 1em; border-color: #A9B8C2; border-width: 0 1px 1px 1px; border-style: solid; }\n";
+				css_def += "#wysiwym_content .error { font-size: 1em; }\n";
 			}
 			/** Style dependance - End **/
 
@@ -765,7 +748,7 @@ var WYSIWYM = new function()
 		return BBcode;
 	};
 
-<!-- IF S_SMILIES_ALLOWED and .smiley -->
+<!-- IF W_SMILIES_STATUS and .wysiwym_smiley -->
 	/**
 	* Set posting smilies
 	*	Not all availables, just the smilies that are displayed in the posting box
@@ -773,13 +756,15 @@ var WYSIWYM = new function()
 	phpbb_smilies = function()
 	{
 		var smiley = {
-			/* Wrap the smiley with spaces */
-	<!-- BEGIN smiley -->
-			'{smiley.A_SMILEY_CODE}' : {
-				image : '{smiley.SMILEY_IMG}',
-				description : '{smiley.SMILEY_DESC}'
-			}<!-- IF not smiley.S_LAST_ROW -->,<!-- ENDIF -->
-	<!-- END smiley -->
+	<!-- BEGIN wysiwym_smiley -->
+			'{wysiwym_smiley.A_SMILEY_CODE}' : {
+				code : '{wysiwym_smiley.SMILEY_CODE}',
+				image : '{wysiwym_smiley.SMILEY_IMG}',
+				width : '{wysiwym_smiley.SMILEY_WIDTH}',
+				height : '{wysiwym_smiley.SMILEY_HEIGHT}',
+				description : '{wysiwym_smiley.SMILEY_DESC}'
+			}<!-- IF not wysiwym_smiley.S_LAST_ROW -->,<!-- ENDIF -->
+	<!-- END wysiwym_smiley -->
 		};
 		return smiley;
 	};
@@ -795,11 +780,6 @@ var WYSIWYM = new function()
 		var content = arguments[2];
 		var code_open = '[code';
 		var code_close = '[/code]';
-
-//		// Additionally, magic url parsing should go after parsing bbcodes, but for safety those are stripped out too...
-//		$htm_match = get_preg_expression('bbcode_htm');
-//		unset($htm_match[4], $htm_match[5]);
-//		$htm_replace = array('\1', '\1', '\2', '\1');
 
 		var out = '';
 		var code_block = '';
@@ -846,7 +826,6 @@ var WYSIWYM = new function()
 				if (open == 1)
 				{
 					code_block += content.substring(0, pos2);
-//					code_block = preg_replace($htm_match, $htm_replace, code_block);
 
 					// Parse this code block
 					out += bbcode_parse_code(mode, code_block);
@@ -873,8 +852,6 @@ var WYSIWYM = new function()
 		if (code_block)
 		{
 			code_block = code_block.substring(0, code_block.length-7);
-//			code_block = preg_replace($htm_match, $htm_replace, code_block);
-
 			out += bbcode_parse_code(mode, code_block);
 		}
 
@@ -1018,20 +995,20 @@ var WYSIWYM = new function()
 			var img_error = false;
 			var newObjImage = new Image();
 				newObjImage.src = url;
-			if ((newObjImage.height && config['max_post_img_height']) || (newObjImage.width && config['max_post_img_width']))
+			if ((newObjImage.height && config['max_img_height']) || (newObjImage.width && config['max_img_width']))
 			{
-				if (newObjImage.height > config['max_post_img_height'])
+				if (newObjImage.height > config['max_img_height'])
 				{
-					message = '{LA_MAX_IMG_HEIGHT_EXCEEDED}'.replace('%1$d', config['max_post_img_height']);
+					message = '{LA_MAX_IMG_HEIGHT_EXCEEDED}'.replace('%1$d', config['max_img_height']);
 					if (!in_array(message, warn_msg))
 					{
 						warn_msg[warn_msg.length] = message;
 					}
 					img_error = true;
 				}
-				if (newObjImage.width > config['max_post_img_width'])
+				if (newObjImage.width > config['max_img_width'])
 				{
-					message = '{LA_MAX_IMG_WIDTH_EXCEEDED}'.replace('%1$d', config['max_post_img_width']);
+					message = '{LA_MAX_IMG_WIDTH_EXCEEDED}'.replace('%1$d', config['max_img_width']);
 					if (!in_array(message, warn_msg))
 					{
 						warn_msg[warn_msg.length] = message;
@@ -1065,9 +1042,9 @@ var WYSIWYM = new function()
 		// Do not allow size=0 or empty text
 		if (size > 0 && text != '')
 		{
-			if (config['max_post_font_size'] &&  size > config['max_post_font_size'])
+			if (config['max_font_size'] &&  size > config['max_font_size'])
 			{
-				message = '{LA_MAX_FONT_SIZE_EXCEEDED}'.replace('%1$d', config['max_post_font_size']);
+				message = '{LA_MAX_FONT_SIZE_EXCEEDED}'.replace('%1$d', config['max_font_size']);
 				if (!in_array(message, warn_msg))
 				{
 					warn_msg[warn_msg.length] = message;
@@ -1096,18 +1073,18 @@ var WYSIWYM = new function()
 		// Do not allow 0-sizes generally being entered
 		if (url != '' && width > 0 && height > 0)
 		{
-			if (config['max_post_img_height'] && height > config['max_post_img_height'])
+			if (config['max_img_height'] && height > config['max_img_height'])
 			{
-				message = '{LA_MAX_FLASH_HEIGHT_EXCEEDED}'.replace('%1$d', config['max_post_img_height']);
+				message = '{LA_MAX_FLASH_HEIGHT_EXCEEDED}'.replace('%1$d', config['max_img_height']);
 				if (!in_array(message, warn_msg))
 				{
 					warn_msg[warn_msg.length] = message;
 				}
 				flash_error = true;
 			}
-			if (config['max_post_img_width'] && width > config['max_post_img_width'])
+			if (config['max_img_width'] && width > config['max_img_width'])
 			{
-				message = '{LA_MAX_FLASH_WIDTH_EXCEEDED}'.replace('%1$d', config['max_post_img_width']);
+				message = '{LA_MAX_FLASH_WIDTH_EXCEEDED}'.replace('%1$d', config['max_img_width']);
 				if (!in_array(message, warn_msg))
 				{
 					warn_msg[warn_msg.length] = message;
@@ -1139,36 +1116,15 @@ var WYSIWYM = new function()
 	};
 
 	/**
-	* Parse attachment bbcode
+	* Parse attachment as not in-line
 	**/
-	bbcode_attachment = function(full_tag, attach_num, attach_name)
-	{
-		attachment_ary[attachment_ary.length] = '"' + attach_num + '"';
-		var attach_url = '{W_ATTACH_U_FILE}'.replace('%1$d', attach_num);
-		var attach_data = get_attachment_data(attach_num);
-
-		var html  = template[config['template']]['attach']['inline_attachment_open'];
-		var	attach_comment = (attach_data['COMMENT']) ? template[config['template']]['attach']['inline_attach_comment'].replace('{attach_text}', attach_data['COMMENT']) : '';
-		// Treat this as image or file ?
-		if (attach_extensions[attach_data['EXTENSION']]['cat'] == 1)
-		{
-			html += template[config['template']]['attach']['inline_attach_img'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']).replace('{attach_comment}', attach_comment).replace('{attach_name}', attach_data['NAME']);
-		}
-		else
-		{
-			html += template[config['template']]['attach']['inline_attach_file'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_text}', attach_data['NAME']).replace('{attach_comment}', attach_comment);
-		}
-			html += template[config['template']]['attach']['inline_attachment_close'];
-		return html;
-	};
-
-	parse_attachment = function(str)
+	parse_attachment = function()
 	{
 		var id = 0;
 		var have_attach;
-		var attach_el;
 		var attach_data;
 		var html = '';
+		var html_template;
 
 		if (config['template'] == 'prosilver')
 		{
@@ -1208,16 +1164,30 @@ var WYSIWYM = new function()
 				if (attachments)
 				{
 					attach_data = get_attachment_data(id);
-					var	attach_comment = (attach_data['COMMENT']) ? template[config['template']]['attach']['attach_comment'].replace('{attach_comment}', attach_data['COMMENT']) : '';
+
+					var	template_attach_comment	= (attach_data['COMMENT'])	? template[config['template']]['attach']['attach_comment'].replace('{attach_comment}', attach_data['COMMENT']) : '';
+
 					// Treat this as image or file ?
 					if (attach_extensions[attach_data['EXTENSION']]['cat'] == 1)
 					{
-						html += template[config['template']]['attach']['attach_img'].replace('{attach_id}', attach_data['ID']).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']).replace('{attach_comment}', attach_comment).replace('{attach_name}', attach_data['NAME']);
+						template_attach_size	= (attach_data['SIZE'])		? template[config['template']]['attach']['attach_img_size'].replace('{attach_size}', attach_data['SIZE']) : '';
+						template_attach_name	= (attach_data['NAME'])		? template[config['template']]['attach']['attach_name'].replace('{attach_name}', attach_data['NAME']) : '';
+
+						html_template = template[config['template']]['attach']['inline_attach_img'];
+						html_template = html_template.replace('{template_attach_name}', template_attach_name);
 					}
 					else
 					{
-						html += template[config['template']]['attach']['attach_file'].replace('{attach_text}', attach_comment).replace('{attach_url}', attach_data['URL']).replace('{attach_name}', attach_data['NAME']);
+						template_attach_size	= (attach_data['SIZE'])		? template[config['template']]['attach']['attach_file_size'].replace('{attach_size}', attach_data['SIZE']) : '';
+						html_template = template[config['template']]['attach']['inline_attach_file'];
 					}
+
+					html_template = html_template.replace('{attach_url}', attach_data['URL']);
+					html_template = html_template.replace('{attach_name}', attach_data['NAME']);
+					html_template = html_template.replace('{template_attach_comment}', template_attach_comment);
+					html_template = html_template.replace('{template_attach_size}', template_attach_size);
+					html += html_template;
+
 					id++;
 				}
 				else
@@ -1233,18 +1203,91 @@ var WYSIWYM = new function()
 			
 		}
 
-		return str + html;
+		var wysiwym_attach = document.getElementById('wysiwym_attach');
+		wysiwym_attach.innerHTML = html;
+	};
+
+	/**
+	* Parse attachment bbcode
+	**/
+	bbcode_attachment = function(full_tag, attach_num, attach_name)
+	{
+
+		if (!config['attach_allowed'])
+		{
+			return template[config['template']]['attach']['inline_attachment_open'] + attach_name + template[config['template']]['attach']['inline_attachment_close'];
+		}
+
+		var html_template;
+		var template_attach_size;
+		var template_attach_name;
+		attachment_ary[attachment_ary.length] = '"' + attach_num + '"';
+					
+		attach_data = get_attachment_data(attach_num);
+
+		var	template_attach_comment	= (attach_data['COMMENT'])	? template[config['template']]['attach']['attach_comment'].replace('{attach_comment}', attach_data['COMMENT']) : '';
+
+		// Treat this as image or file ?
+		if (attach_extensions[attach_data['EXTENSION']]['cat'] == 1)
+		{
+			template_attach_size	= (attach_data['SIZE'])		? template[config['template']]['attach']['attach_img_size'].replace('{attach_size}', attach_data['SIZE']) : '';
+			template_attach_name	= (attach_data['NAME'])		? template[config['template']]['attach']['attach_name'].replace('{attach_name}', attach_data['NAME']) : '';
+			html_template = template[config['template']]['attach']['attach_img'];
+			html_template = html_template.replace('{template_attach_name}', template_attach_name);
+		}
+		else
+		{
+			template_attach_size	= (attach_data['SIZE'])		? template[config['template']]['attach']['attach_file_size'].replace('{attach_size}', attach_data['SIZE']) : '';
+			html_template = template[config['template']]['attach']['attach_file'];
+		}
+
+		html_template = html_template.replace('{attach_url}', attach_data['URL']);
+		html_template = html_template.replace('{attach_name}', attach_data['NAME']);
+		html_template = html_template.replace('{template_attach_comment}', template_attach_comment);
+		html_template = html_template.replace('{template_attach_size}', template_attach_size);
+
+		return template[config['template']]['attach']['inline_attachment_open'] + html_template + template[config['template']]['attach']['inline_attachment_close'];
 	};
 
 	get_attachment_data = function(id)
 	{
-		var attach_el = 'attachment_data[' + id + ']';
-		var attach_id = document.forms[form_name].elements[attach_el + '[attach_id]'].value;
+		var attach_id = document.forms[form_name].elements['attachment_data[' + id + '][attach_id]'].value;
 		var attach_url = '{W_ATTACH_U_FILE}'.replace('%1$d', attach_id);
-		var attach_name = document.forms[form_name].elements[attach_el + '[real_filename]'].value;
-		var attach_comment = document.forms[form_name].elements[attach_el + '[attach_comment]'].value;
-		var attach_extension = attach_name.substring(attach_name.lastIndexOf(".") + 1)
-		return { 'ID' : attach_id, 'URL' : attach_url, 'NAME' : attach_name, 'COMMENT' : attach_comment, 'EXTENSION' : attach_extension };
+		var attach_name = document.forms[form_name].elements['attachment_data[' + id + '][real_filename]'].value;
+		var attach_comment = document.forms[form_name].elements['comment_list[' + id + ']'].value;
+		var attach_extension = attach_name.substring(attach_name.lastIndexOf(".") + 1);
+		var attach_size = get_attachment_size(attach_url);
+
+		return { 'ID' : attach_id, 'URL' : attach_url, 'NAME' : attach_name, 'COMMENT' : attach_comment, 'EXTENSION' : attach_extension, 'SIZE' : attach_size};
+	};
+
+	/**
+	* Get file size
+	* Code from http://phpjs.org/functions/filesize:401
+	**/ 
+	get_attachment_size = function (url)
+	{
+		var req = this.window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();
+		if (!req) { return false; }
+		url = url.replace(/&amp;/g, '&');
+		req.open('HEAD', url, false);
+		req.send(null);
+
+		if (req.readyState == 4 && req.status == 200)
+		{
+			if (!req.getResponseHeader('Content-Length'))
+			{
+				return false;
+			}
+			else
+			{
+				return (req.getResponseHeader('Content-Length') / 1024).toFixed(2);
+			}
+		}
+		else
+		{
+			return false;
+		}
 	};
 
 	/**
@@ -1282,9 +1325,8 @@ var WYSIWYM = new function()
 	bbcode_url = function(url, short_url, before, tag, css_class)
 	{
 		var board_url	= '{BOARD_URL}';
-		var prime_links = false;
-		var target		= (prime_links) ? ' onclick="window.open(this.href);return false;"' : '';
-		var rel			= (prime_links) ? ' rel="nofollow"' : '';
+		var target		= (config['prime_links']) ? ' onclick="window.open(this.href);return false;"' : '';
+		var rel			= (config['prime_links']) ? ' rel="nofollow"' : '';
 
 		short_url = (short_url) ? short_url : url;
 
@@ -1391,7 +1433,7 @@ var WYSIWYM = new function()
 		return str;
 	};
 
-	<!-- IF S_SMILIES_ALLOWED and .smiley -->
+	<!-- IF W_SMILIES_STATUS and .wysiwym_smiley -->
 	/**
 	* Parse Smilies
 	**/
@@ -1399,25 +1441,35 @@ var WYSIWYM = new function()
 	{
 		var match = [];
 		var replace = [];
+		var num_smilies = 0;
 
 		// The smilies array is global 
 		for (var smiley in smilies)
 		{
-			smilie = new RegExp("(^|\\b|\\s|\\n|\\.)(" + preg_quote(smiley) + ")(^|\\b|\\s|\\n|\\.)", 'gim');
+			smilie = new RegExp('(?:\\b|\\s|\\n|\\.)(' + preg_quote(smiley) + ')(?![^<>]*>)', 'gim');
+			/*
+			* buffer return an array of element
+			* that contain at least 3 parts :
+			*	0 = all text before a smilie
+			*	1 = the smilie
+			*	2 all after it
+			**/
 			var buffer = content.split(smilie);
+
 			if (buffer[1])
-			{
-				match[match.length] = new RegExp(preg_quote(smiley), 'g');
-				replace[replace.length] = '<!-- s(' + smiley + ') --><img src="' + smilies[smiley].image + '" alt="' + smiley + '" title="' + smilies[smiley].description + '" /><!-- s(' + smiley + ') -->'
+			{	// Use parseInt(buffer.length / 2) because this smilie can match more than one time
+				num_smilies = num_smilies + parseInt(buffer.length / 2);
+				match[match.length] = smilie; //new RegExp(preg_quote(smiley), 'g');
+				replace[replace.length] = ' <!-- s(' + smiley + ') --><img src="' + smilies[smiley].image + '" width="' + smilies[smiley].width + '" height="' + smilies[smiley].height + '" alt="' + smilies[smiley].code + '" title="' + smilies[smiley].description + '" /><!-- s(' + smiley + ') -->'
 			}
 		}
 
 		if (match.length)
 		{
 			// Check number of smilies
-			if (config['max_post_smilies'] && match.length > config['max_post_smilies'])
+			if (config['max_smilies'] && num_smilies > config['max_smilies'])
 			{
-				warn_msg[warn_msg.length] = '{LA_TOO_MANY_SMILIES}'.replace('%d', config['max_post_smilies']);
+				warn_msg[warn_msg.length] = '{LA_TOO_MANY_SMILIES}'.replace('%d', config['max_smilies']);
 				return content;
 			}
 
@@ -1436,9 +1488,6 @@ var WYSIWYM = new function()
 	**/
 	bbcode_to_html_parse = function(str, mode)
 	{
-	//	var box = document.getElementById('wysiwym_editor');
-	//	var new_height = parseInt(box.style.height, 10);
-
 		// We surround the post text with spaces, because a smilie can be there or a link for parse_magic_url
 		str = ' ' + str + ' ';
 
@@ -1450,15 +1499,15 @@ var WYSIWYM = new function()
 		var message_length = (mode == 'post') ? deEntify(trim(str)).length : deEntify(trim(str.replace(/\[\/?[a-z\*\+\-]+(=[\S]+)?\]/gim, ' '))).length;
 
 		// Maximum message length check. 0 disables this check completely.
-		if (config['max_post_chars'] > 0 && message_length > config['max_post_chars'])
+		if (config['max_chars'] > 0 && message_length > config['max_chars'])
 		{
-			warn_msg[warn_msg.length] = '{LA_TOO_MANY_CHARS_POST}'.replace('%1$d', message_length).replace('%2$d', config['max_post_chars']);
+			warn_msg[warn_msg.length] = '{LA_TOOMANYCHARS}'.replace('%1$d', message_length).replace('%2$d', config['max_chars']);
 		}
 
-		// Minimum message length check for post only
-		if (!message_length || message_length < config['min_post_chars'])
+		// Minimum message length check
+		if (!message_length || message_length < config['min_chars'])
 		{
-			warn_msg[warn_msg.length] = '{LA_TOO_FEW_CHARS_LIMIT}'.replace('%1$d', message_length).replace('%2$d', config['min_post_chars']);
+			warn_msg[warn_msg.length] = '{LA_TOO_FEW_CHARS_LIMIT}'.replace('%1$d', message_length).replace('%2$d', config['min_chars']);
 		}
 
 		/*	'<'	to	'&lt;'	and	'>'	to	'&gt;'	*/
@@ -1470,8 +1519,8 @@ var WYSIWYM = new function()
 		var have_quote	= (str.indexOf('[quote') > -1 ? true : false);
 		var have_list	= (str.indexOf('[list') > -1 ? true : false);
 		var have_smilie	= false;
-		//Reset attach
-			attachment_ary = [];
+		// Reset attach
+		attachment_ary = [];
 
 		/** Have the post a possible bbcode? 
 		*	and the user want to display it 
@@ -1527,7 +1576,7 @@ var WYSIWYM = new function()
 		}
 		/** Have the post a possible bbcode ? - End **/
 
-		<!-- IF S_SMILIES_ALLOWED and .smiley -->
+		<!-- IF W_SMILIES_STATUS and .wysiwym_smiley -->
 		/* Parse posting smilies?
 		*	and the user want to display it 
 		*	and the forum allow use BBCode  - Start **/
@@ -1553,7 +1602,7 @@ var WYSIWYM = new function()
 		/* Do not automatically parse URLs - End */
 
 		/* Check number of links - Start */
-		if (config['max_post_urls'])
+		if (config['max_urls'])
 		{
 			/**
 			*	l=local
@@ -1562,16 +1611,12 @@ var WYSIWYM = new function()
 			*	e=emails
 			**/
 			var num_matches = str.match(/<\!-- ([lmwe]) -->.*?<\!-- \1 -->/gim);
-			if (num_matches !== null && num_matches.length > config['max_post_urls'])
+			if (num_matches !== null && num_matches.length > config['max_urls'])
 			{
-				warn_msg[warn_msg.length] = '{LA_TOO_MANY_URLS}'.replace('%d', config['max_post_urls']);
+				warn_msg[warn_msg.length] = '{LA_TOO_MANY_URLS}'.replace('%d', config['max_urls']);
 			}
 		}
 		/* Check number of links - End */
-
-		/* Not in-line attach - Start */
-		str = parse_attachment(str);
-		/* Not in-line attach - Start */
 
 		/* convert CRLF to <br> */
 		str = str.replace(/\n/g, "<br />");
@@ -1590,6 +1635,10 @@ var WYSIWYM = new function()
 			warn_msg = [];
 		}
 		/* Display errors if we have - Start */
+
+		/* Not in-line attach - Start */
+		parse_attachment();
+		/* Not in-line attach - Start */
 
 		// remove excessive spaces and newlines(?) and finally display the post
 		return trim(str);
@@ -1642,16 +1691,22 @@ var WYSIWYM = new function()
 		// Run this only if the preview is visible ;)
 		if (document.getElementById(wysiwym_preview).style.display != 'none')
 		{
-			var the_text = bbcode_to_html_parse(phpbb_editor.value, 'post');
+			var the_content = bbcode_to_html_parse(phpbb_editor.value, 'post');
 
-			wysiwym_editor.innerHTML = the_text;
+			wysiwym_content.innerHTML = the_content;
 
 			if (config['Syntax_highlight'])
 			{
 				SyntaxHighlighter.highlightDocument(false);
 			}
+
+			if (!is_checked('attach_sig') && document.forms[form_name].elements['wysiwym_sig'])
+			{
+				toggle_wysiwym('wysiwym_sig', -1);
+			}
+
 			/* I bet that someone wat to display tabs inside the code bbcode */
-		//	wysiwym_editor.innerHTML = wysiwym_editor.innerHTML.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, "\t");
+		//	wysiwym_content.innerHTML = wysiwym_content.innerHTML.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, "\t");
 		}
 	};
 
@@ -1662,16 +1717,17 @@ var WYSIWYM = new function()
 	{
 		phpbb_editor = document.forms[form_name].elements[text_name];
 		phpbb_editor.onkeyup = function() { Update(); return false; };
-		wysiwym_editor = document.getElementById('wysiwym_editor');
+		wysiwym_content = document.getElementById('wysiwym_content');
 		// Some css on-the-fly
 		wysiwym_addStyle();
 		// Fill the bbcodes array
 		bbcodes = bbcode_init();
+		<!-- IF W_SMILIES_STATUS -->
 		// Fill the smilies array
 		smilies = phpbb_smilies();
+		<!-- ENDIF -->
 		// hide the preview
 		toggle_wysiwym(wysiwym_preview);
-
 	};
 
 	this.Start = Start;
@@ -1695,7 +1751,7 @@ function dE_wysiwym(ID)
 function wysiwym_resize(id, pix)
 {
 	var box = document.getElementById(id);
-	var new_height = (parseInt(box.style.height, 10) ? parseInt(box.style.height, 10) : 200) + pix;
+	var new_height = (parseInt(box.style.height, 10) ? parseInt(box.style.height, 10) : {W_BLOCK_HEIGHT}) + pix;
 
 	if (new_height > 0)
 	{

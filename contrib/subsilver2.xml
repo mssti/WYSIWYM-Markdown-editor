@@ -48,9 +48,9 @@
 			document.forms[form_name].elements[text_name].focus();
 			theSelection = '';]]></find>
 				<action type="after-add"><![CDATA[
-/** MOD : WYSIWYM editor - Start **/
+/** MOD : WYSIWYM editor (1) - Start **/
 			wysiwym_editor();
-/** MOD : WYSIWYM editor - End **/
+/** MOD : WYSIWYM editor (1) - End **/
 ]]></action>
 			</edit>
 
@@ -59,9 +59,9 @@
 		document.forms[form_name].elements[text_name].focus();
 		theSelection = '';]]></find>
 				<action type="after-add"><![CDATA[
-/** MOD : WYSIWYM editor - Start **/
+/** MOD : WYSIWYM editor (2) - Start **/
 		wysiwym_editor();
-/** MOD : WYSIWYM editor - End **/
+/** MOD : WYSIWYM editor (2) - End **/
 ]]></action>
 			</edit>
 
@@ -71,9 +71,9 @@
 		textarea.focus();
 	}]]></find>
 				<action type="after-add"><![CDATA[
-/** MOD : WYSIWYM editor - Start **/
-			wysiwym_editor();
-/** MOD : WYSIWYM editor - End **/
+/** MOD : WYSIWYM editor (3) - Start **/
+			wysiwym_editor(popup);
+/** MOD : WYSIWYM editor (3) - End **/
 ]]></action>
 			</edit>
 
@@ -88,13 +88,24 @@
 				<action type="after-add"><![CDATA[
 /**
 * MOD : WYSIWYM editor - Start
-* Chech if the WYSIWYM Markdown editor is available and eventually update it
+* Check if the WYSIWYM Markdown editor is available and eventually update it
 **/
-function wysiwym_editor()
-{ 
-	if (typeof(WYSIWYM) != 'undefined')
+function wysiwym_editor(popup)
+{
+	// Smilies popup
+	if (popup)
 	{
-		WYSIWYM.Update();
+		if (typeof(opener.WYSIWYM) != 'undefined')
+		{
+			opener.WYSIWYM.Update();
+		}
+	}
+	else
+	{
+		if (typeof(WYSIWYM) != 'undefined')
+		{
+			WYSIWYM.Update();
+		}
 	}
 }
 /** MOD : WYSIWYM editor - End **/
@@ -116,6 +127,13 @@ function wysiwym_editor()
 				<action type="before-add"><![CDATA[<!-- IF S_LIVE_REVIEW -->
 	<input type="button" class="btnbbcode" name="wysiwym" value="{L_PREVIEW}" onclick="dE_wysiwym('wysiwym_preview');" />&nbsp;
 <!-- ENDIF -->]]></action>
+			</edit>
+		</open>
+
+		<open src="styles/subsilver2/template/ucp_profile_signature.html">
+			<edit>
+				<find><![CDATA[<!-- DEFINE $S_SIGNATURE = 1 -->]]></find>
+				<action type="after-add"><![CDATA[<!-- IF S_LIVE_REVIEW --><!-- INCLUDE posting_wysiwym_preview.html --><!-- ENDIF -->]]></action>
 			</edit>
 		</open>
 
