@@ -1,6 +1,6 @@
 /**
 * @package: phpBB 3.0.7-PL1 :: WYSIWYM Markdown editor -> root/styles/prosilver/template
-* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1-PL1 2010/07/04 10:07:04 leviatan21 Exp $
+* @version: $Id: posting_wysiwym.js, [BETA] 1.0.1-PL1 2010/07/16 10:07:16 leviatan21 Exp $
 * @copyright: (c) 2010 leviatan21 < info@mssti.com > (Gabriel) http://www.mssti.com/phpbb3/
 * @license: http://opensource.org/licenses/gpl-license.php GNU Public License
 * @author: leviatan21 - http://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=345763
@@ -18,9 +18,6 @@
 *	| || || || || || || || || | _ | | | | | |\___ \\___ \  | |  | | _ | |_ | |_| || | | | | |
 *	|_'__'__/|_'__'__/|_'__'__/|_||_| |_| |_|/____//____/  |_|  |_||_|\___| \___/ |_| |_| |_|
 *
-* @todo :
-*	ACP On/Off options
-*	attachment improve (media files)
 **/
 
 var WYSIWYM = new function()
@@ -43,6 +40,7 @@ var WYSIWYM = new function()
 	/* The wysiwym editor element */
 	var wysiwym_content = '';
 	/* The wysiwym editor object */
+	var wysiwym_postbody = document.getElementById('wysiwym_postbody');
 	var wysiwym_preview = 'wysiwym_preview';
 	/* Array that will carry all warnings messages */
 	var warn_msg = [];
@@ -171,8 +169,9 @@ var WYSIWYM = new function()
 				css_def += "#wysiwym_content .codebox { padding: 3px; background-color: #FFFFFF; font-size: 1em; border: 1px solid #d8d8d8; }\n";
 				css_def += "#wysiwym_content .codebox div { font-weight: bold; font-size: 0.8em; text-transform: uppercase; border-bottom: 1px solid #cccccc; margin-bottom: 3px; }\n";
 				css_def += "#wysiwym_content .codebox code { color: #2E8B57; white-space: normal; display: block; font: 0.9em Monaco, 'Andale Mono','Courier New', Courier, mono; overflow: auto; max-height: 200px; padding-top: 5px; margin: 2px 0; }\n";
-			//	css_def += "#wysiwym_content blockquote div { height: auto; width: 100%; }\n";
 				css_def += "#wysiwym_content .error { font-size: 1em; }\n";
+				css_def += "#wysiwym_postbody { width: 77%; }\n";
+				css_def += "*:first-child+html #wysiwym_sig { width: 98.5%; }\n";
 			}
 			else if (config['template'] == 'subsilver2')
 			{
@@ -182,6 +181,7 @@ var WYSIWYM = new function()
 			//	css_def += "#wysiwym_content .quotetitle { color: #333333; background-color: #A9B8C2; font-size: 0.85em; font-weight: bold; padding: 4px; }\n";
 			//	css_def += "#wysiwym_content .quotecontent { font-family: 'Lucida Grande', 'Trebuchet MS', Helvetica, Arial, sans-serif;	background-color: #FAFAFA; color: #4B5C77; padding: 5px; font-size: 1em; border-color: #A9B8C2; border-width: 0 1px 1px 1px; border-style: solid; }\n";
 				css_def += "#wysiwym_content .error { font-size: 1em; }\n";
+				css_def += "*:first-child+html #wysiwym_sig { width: 98.5%; }\n";
 			}
 			/** Style dependance - End **/
 
@@ -299,6 +299,10 @@ var WYSIWYM = new function()
 		if (document.getElementById(id))
 		{
 			return document.getElementById(id).checked;
+		}
+		else if (document.forms[form_name].elements[id])
+		{
+			return document.forms[form_name].elements[id].checked;
 		}
 		return false;
 	};
@@ -1700,14 +1704,23 @@ var WYSIWYM = new function()
 				SyntaxHighlighter.highlightDocument(false);
 			}
 
-			if (!is_checked('attach_sig') && document.forms[form_name].elements['wysiwym_sig'])
+			// Display signture ?
+			if (document.getElementById('wysiwym_sig'))
 			{
-				toggle_wysiwym('wysiwym_sig', -1);
+				var s = (!is_checked('attach_sig')) ? -1 : 1;
+				toggle_wysiwym('wysiwym_sig', s);
 			}
 
 			/* I bet that someone wat to display tabs inside the code bbcode */
 		//	wysiwym_content.innerHTML = wysiwym_content.innerHTML.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, "\t");
+
+			Scroll_preview();
 		}
+	};
+
+	function Scroll_preview()
+	{
+		wysiwym_postbody.scrollTop = phpbb_editor.scrollTop + (phpbb_editor.scrollTop > phpbb_editor.rows ? 10 : -10);
 	};
 
 	/**
